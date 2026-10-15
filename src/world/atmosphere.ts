@@ -197,7 +197,7 @@ export function buildAtmosphere(scene: THREE.Scene, lampWorld: THREE.Vector3, mo
       v: new THREE.Vector3(),
       ph: rnd(0, 6),
       free: false,
-      heart: new THREE.Vector3(WIN.x + hx * 0.11, 3.4 + hy * 0.11, -7),
+      heart: new THREE.Vector3(WIN.x + hx * 0.11, 4.9 + hy * 0.11, -8),
     };
   });
 
@@ -292,7 +292,7 @@ export function buildAtmosphere(scene: THREE.Scene, lampWorld: THREE.Vector3, mo
       if (fin >= 0) {
         const b = THREE.MathUtils.clamp((fin - 2) / 4, 0, 1);
         const e = b < 0.5 ? 4 * b * b * b : 1 - Math.pow(-2 * b + 2, 3) / 2;
-        bigLily.scale.setScalar(0.001 + e * 1.6);
+        bigLily.scale.setScalar(0.001 + e * 0); // the finale set's Sala flower replaces this
         bigLily.rotation.y += dt * 0.08;
       }
       const dp = dustGeo.attributes.position.array as Float32Array;

@@ -22,6 +22,7 @@ import { makePresets } from './world/weather';
 import { Player } from './player/player';
 import { Inspector } from './world/inspect';
 import { Guide } from './world/guide';
+import { buildFinale } from './world/finale';
 import { bindTouch } from './player/touch';
 import { Sound } from './audio/audio';
 import { TIMELINE } from './content/timeline';
@@ -110,6 +111,7 @@ for (const it of items)
 const pickables = [...meshToItem.keys()];
 const inspector = new Inspector(scene, camera);
 const guide = new Guide(scene);
+const finale = buildFinale(scene, [...building.shell, ...furniture.curtains]);
 const wide = () => innerWidth > 760;
 
 /** Where the firefly path leads: the door, then unread memories in date order, then the jar. */
@@ -273,6 +275,8 @@ addEventListener('pointermove', (e) => {
   inspectDrag = { x: e.clientX, y: e.clientY };
 });
 addEventListener('pointerup', () => (inspectDrag = null));
+addEventListener('pointercancel', () => (inspectDrag = null));
+addEventListener('blur', () => (inspectDrag = null));
 canvas.addEventListener('click', () => {
   if (coarse || !player.enabled) return;
   if (document.pointerLockElement !== canvas) return lockPointer();
@@ -455,13 +459,14 @@ async function startFinale() {
   camera.getWorldDirection(fwd);
   camTween = {
     from: camera.position.clone(),
-    to: new THREE.Vector3(WIN.x - 0.15, 1.7, -RD / 2 + 1.5),
+    to: new THREE.Vector3(WIN.x - 0.3, 2.4, 2.4),
     lf: camera.position.clone().add(fwd),
-    lt: new THREE.Vector3(WIN.x, 2.6, -8),
+    lt: new THREE.Vector3(WIN.x, 2.3, -9),
     t: 0,
     dur: reduceMotion ? 0.01 : 2.4,
   };
   sound.rainWanted = false;
+  void renderer.compileAsync(scene, camera).catch(() => {});
   sound.apply();
   await new Promise((r) => setTimeout(r, reduceMotion ? 0 : 2400));
   finaleT = 0;
@@ -489,6 +494,7 @@ $('finBack').onclick = () => {
   $('finale').hidden = true;
   $('finBack').classList.remove('on');
   finaleT = -1;
+  finale.restore();
   camTween = null;
   sound.rainWanted = presets[store.settings.weather].rain;
   sound.apply();
@@ -581,6 +587,7 @@ renderer.setAnimationLoop(() => {
     if (peel.back && peel.t <= 0 && peel.done) peel.done();
   }
   inspector.update(dt);
+  finale.update(dt, finaleT);
   guide.update(
     dt,
     camera.position,

@@ -64,7 +64,7 @@ export class Inspector {
         .clone()
         .addScaledVector(fwd, 0.62)
         .addScaledVector(right, side)
-        .addScaledVector(this.camera.up, side ? 0 : -0.1),
+        .addScaledVector(this.camera.up, side ? 0 : 0.12),
       scale: THREE.MathUtils.clamp(0.3 / Math.max(size.x, size.y, size.z, 0.01), 0.4, 8),
     };
     this.light.position

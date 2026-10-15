@@ -16,6 +16,8 @@ export interface Furniture {
   bulbs: THREE.Mesh[];
   stars: THREE.Object3D[];
   lampWorld: THREE.Vector3;
+  /** Hang in mid-air once the walls dissolve, so they fade with them. */
+  curtains: THREE.Mesh[];
 }
 
 export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Furniture {
@@ -380,6 +382,7 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
   }
 
   // ---- procedural soft furnishings that read better than a model: curtains, desk lamp, shelf of photos
+  const curtains: THREE.Mesh[] = [];
   const curtainMat = new THREE.MeshStandardMaterial({
     color: 0xedbcc6,
     roughness: 0.95,
@@ -398,7 +401,7 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
           Math.sin(p.getY(i) * 2 + p.getX(i) * 3) * 0.01,
       );
     g.computeVertexNormals();
-    add(g, curtainMat, [x, (RH - 0.25) / 2, -RD / 2 + 0.14], null, root);
+    curtains.push(add(g, curtainMat, [x, (RH - 0.25) / 2, -RD / 2 + 0.14], null, root));
   }
   // desk lamp (the key light sits in its bulb)
   const lamp = new THREE.Group();
@@ -618,7 +621,7 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
       stars.push(h);
     });
   }
-  return { anchors, fan, bulbs, stars, lampWorld };
+  return { anchors, fan, bulbs, stars, lampWorld, curtains };
 }
 
 /** A big leafy house plant in a cream ceramic pot (matches the soft style better than any free model). */

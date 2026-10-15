@@ -31,6 +31,8 @@ export interface Building {
   };
   winGroup: THREE.Group;
   skyMat: THREE.MeshBasicMaterial;
+  /** Walls, ceilings, trim, window and door: what dissolves in the finale. */
+  shell: THREE.Mesh[];
 }
 
 function wallWithHoles(
@@ -94,7 +96,15 @@ export function buildRoom(scene: THREE.Scene, a: Assets, col: Colliders, skyTex:
   const trim = M(0xfaf4ec, { roughness: 0.5 });
 
   // ---- room shell
-  add(new THREE.PlaneGeometry(RW, RD), floorMat, [0, 0, 0], [-Math.PI / 2, 0, 0], root, false, true);
+  add(
+    new THREE.PlaneGeometry(RW, RD),
+    floorMat,
+    [0, 0, 0],
+    [-Math.PI / 2, 0, 0],
+    root,
+    false,
+    true,
+  ).userData.floor = true;
   const ceiling = add(
     new THREE.PlaneGeometry(RW, RD),
     ceilMat,
@@ -143,7 +153,15 @@ export function buildRoom(scene: THREE.Scene, a: Assets, col: Colliders, skyTex:
   const hallFloor = M(0xffffff, { map: a.floor.map.clone(), normalMap: a.floor.normal, roughness: 0.55 });
   (hallFloor.map as THREE.Texture).repeat.set(1.6, 1.2);
   (hallFloor.map as THREE.Texture).needsUpdate = true;
-  add(new THREE.PlaneGeometry(hw, hd), hallFloor, [hx, 0.001, hz], [-Math.PI / 2, 0, 0], root, false, true);
+  add(
+    new THREE.PlaneGeometry(hw, hd),
+    hallFloor,
+    [hx, 0.001, hz],
+    [-Math.PI / 2, 0, 0],
+    root,
+    false,
+    true,
+  ).userData.floor = true;
   const hallCeiling = add(
     new THREE.PlaneGeometry(hw, hd),
     ceilMat,
@@ -350,7 +368,26 @@ export function buildRoom(scene: THREE.Scene, a: Assets, col: Colliders, skyTex:
   const skyMat = new THREE.MeshBasicMaterial({ map: skyTex });
   add(new THREE.PlaneGeometry(26, 19), skyMat, [WIN.x, 1.5, -15], null, root, false, false);
 
-  return { root, ceiling, frontWall, hallCeiling, door, paneL, paneR, glassUniforms, winGroup, skyMat };
+  // everything built so far except the sky backdrop is the building shell
+  const shell: THREE.Mesh[] = [];
+  root.traverse((o) => {
+    const m = o as THREE.Mesh;
+    // the floor stays so the room floats; the sky backdrop fades too (the open night replaces it)
+    if (m.isMesh && !m.userData.floor) shell.push(m);
+  });
+  return {
+    root,
+    ceiling,
+    frontWall,
+    hallCeiling,
+    door,
+    paneL,
+    paneR,
+    glassUniforms,
+    winGroup,
+    skyMat,
+    shell,
+  };
 }
 
 /** Tileable cream wallpaper with tiny pink and sage flowers and a faint stripe. */

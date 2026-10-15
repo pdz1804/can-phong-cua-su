@@ -618,3 +618,23 @@ button {
     max-height: 46vh;
   }
 }
+
+/* finale lines read like subtitles at the bottom, so the night over Sala stays in view */
+#finale {
+  place-items: end center;
+  background: linear-gradient(transparent 55%, #0a070dcc 100%);
+}
+.fin {
+  max-width: 46ch;
+}
+.fin p {
+  font-size: clamp(18px, 2.6vw, 28px);
+  margin-bottom: 0.25em;
+}
+#finale {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
