@@ -20,6 +20,8 @@ import { buildBoard, curl } from './world/board';
 import { buildAtmosphere } from './world/atmosphere';
 import { makePresets } from './world/weather';
 import { Player } from './player/player';
+import { Inspector } from './world/inspect';
+import { Guide } from './world/guide';
 import { bindTouch } from './player/touch';
 import { Sound } from './audio/audio';
 import { TIMELINE } from './content/timeline';
@@ -106,6 +108,29 @@ for (const it of items)
     if ((o as THREE.Mesh).isMesh) meshToItem.set(o, it);
   });
 const pickables = [...meshToItem.keys()];
+const inspector = new Inspector(scene, camera);
+const guide = new Guide(scene);
+const wide = () => innerWidth > 760;
+
+/** Where the firefly path leads: the door, then unread memories in date order, then the jar. */
+let guideKey = '';
+let guideTarget: THREE.Vector3 | null = null;
+function nextGuideTarget(): THREE.Vector3 | null {
+  const key = `${flow.phase}|${doorOpen}|${store.seen.size}|${store.finaleDone}`;
+  if (key === guideKey) return guideTarget;
+  guideKey = key;
+  const centre = (o: THREE.Object3D) => new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3());
+  guideTarget = null;
+  if (flow.phase === 'doorstep' && !doorOpen) guideTarget = centre(building.door);
+  else if (flow.phase === 'explore') {
+    const note = board.items.find((n) => !store.seen.has(n.id));
+    const kept = keep.items.find((k) => k.kind !== 'jar' && !store.seen.has(k.id));
+    if (note) guideTarget = centre(note.object).add(new THREE.Vector3(0, 0, 0.25));
+    else if (kept) guideTarget = centre(kept.object);
+    else if (store.unlocked && !store.finaleDone) guideTarget = centre(keep.jar);
+  }
+  return guideTarget;
+}
 
 function applyWeather(w: Weather) {
   const p = presets[w];
@@ -238,6 +263,16 @@ document.addEventListener('pointerlockchange', () => {
   if (!document.pointerLockElement && (flow.phase === 'explore' || flow.phase === 'doorstep') && !coarse)
     flow.go('paused');
 });
+let inspectDrag: { x: number; y: number } | null = null;
+canvas.addEventListener('pointerdown', (e) => {
+  if (inspector.active) inspectDrag = { x: e.clientX, y: e.clientY };
+});
+addEventListener('pointermove', (e) => {
+  if (!inspectDrag || !inspector.active) return;
+  inspector.drag(e.clientX - inspectDrag.x, e.clientY - inspectDrag.y);
+  inspectDrag = { x: e.clientX, y: e.clientY };
+});
+addEventListener('pointerup', () => (inspectDrag = null));
 canvas.addEventListener('click', () => {
   if (coarse || !player.enabled) return;
   if (document.pointerLockElement !== canvas) return lockPointer();
@@ -314,9 +349,9 @@ function use(it: Interactable) {
     return;
   }
   if (it.id === 'bubbles') atmo.releaseBubbles(keep.bubbleSource.getWorldPosition(new THREE.Vector3()));
-  it.object.userData.pop = 0;
   sound.chime();
-  showLetter(KEEPSAKES[it.id], it.id);
+  inspector.start(it.object, wide() ? -0.17 : 0, reduceMotion);
+  showLetter(KEEPSAKES[it.id], it.id, true);
 }
 
 function openDoor() {
@@ -328,7 +363,8 @@ function openDoor() {
   flow.go('explore');
 }
 
-function showLetter(l: { date: string; title: string; body: string }, id: string | null) {
+function showLetter(l: { date: string; title: string; body: string }, id: string | null, inspecting = false) {
+  $('letter').classList.toggle('inspect', inspecting);
   if (flow.phase === 'explore') flow.go('reading');
   document.exitPointerLock?.();
   $('letterDate').textContent = l.date;
@@ -350,7 +386,8 @@ function closeLetter() {
     if (store.unlocked && !store.finaleDone)
       setHint('Hũ đom đóm trên bậu cửa sổ đã sáng rồi. Em tới mở nắp nhé');
   };
-  if (peel) {
+  if (inspector.active) void inspector.end().then(finish);
+  else if (peel) {
     peel.back = true;
     peel.done = () => {
       peel = null;
@@ -543,6 +580,12 @@ renderer.setAnimationLoop(() => {
     }
     if (peel.back && peel.t <= 0 && peel.done) peel.done();
   }
+  inspector.update(dt);
+  guide.update(
+    dt,
+    camera.position,
+    flow.phase === 'explore' || flow.phase === 'doorstep' ? nextGuideTarget() : null,
+  );
   composer.render();
 });
 

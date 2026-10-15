@@ -48,5 +48,5 @@ jobs:
           # read the whole page first: piping into grep -q closes early and makes curl exit 23
           html=$(curl -sSf --max-time 20 "$url")
           grep -q 'Căn phòng của Su' <<<"$html"
-          curl -sSf --max-time 20 -o /dev/null "$url/models/bedDouble.glb"
+          curl -sSf --max-time 20 -o /dev/null "$url/models/kaykit/bed_double_A.gltf"
           echo "live: $url"

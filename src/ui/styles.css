@@ -595,3 +595,26 @@ button {
     transition-duration: 0.01s !important;
   }
 }
+
+/* inspecting a keepsake: the object floats on the left, the letter sits on the right (bottom on phones),
+   and the room stays visible and draggable behind it */
+.modal.inspect {
+  background: transparent;
+  pointer-events: none;
+  place-items: center end;
+  padding-right: 5vw;
+}
+.modal.inspect .paper {
+  pointer-events: auto;
+  width: min(420px, 44vw);
+}
+@media (max-width: 760px) {
+  .modal.inspect {
+    place-items: end center;
+    padding: 0 12px calc(env(safe-area-inset-bottom, 0px) + 12px);
+  }
+  .modal.inspect .paper {
+    width: 100%;
+    max-height: 46vh;
+  }
+}
