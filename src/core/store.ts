@@ -69,7 +69,8 @@ export class Store {
   constructor(kv: KV | null = safeStorage()) {
     this.kv = kv;
     this.settings = sanitizeSettings(read(kv, 'su-settings', DEFAULT_SETTINGS));
-    this.seen = new Set(read<string[]>(kv, 'su-seen', []));
+    const saved = read<unknown>(kv, 'su-seen', []);
+    this.seen = new Set(Array.isArray(saved) ? saved.filter((x): x is string => typeof x === 'string') : []);
     this.finaleDone = read(kv, 'su-finale', false);
   }
 

@@ -50,6 +50,11 @@ describe('store', () => {
     kv.setItem('su-settings', '{not json');
     expect(new Store(kv).settings).toEqual(DEFAULT_SETTINGS);
     expect(sanitizeSettings({ weather: 'snow' as never }).weather).toBe('rain');
+    const bad = new MemKV();
+    bad.setItem('su-seen', JSON.stringify({ not: 'an array' }));
+    expect(new Store(bad).seen.size).toBe(0);
+    bad.setItem('su-seen', JSON.stringify(['a', 3, null, 'b']));
+    expect([...new Store(bad).seen]).toEqual(['a', 'b']);
   });
 });
 

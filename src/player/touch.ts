@@ -22,12 +22,16 @@ export function bindTouch(
     sx = 0,
     sy = 0,
     travelled = 0,
-    t0 = 0;
+    t0 = 0,
+    moveTravel = 0,
+    moveT0 = 0;
 
   el.addEventListener('pointerdown', (e) => {
     if (e.pointerType !== 'touch' || !isActive()) return;
     if (e.clientX < innerWidth * 0.42 && moveId === null) {
       moveId = e.pointerId;
+      moveTravel = 0;
+      moveT0 = performance.now();
       ox = e.clientX;
       oy = e.clientY;
       base.style.left = ox + 'px';
@@ -52,6 +56,7 @@ export function bindTouch(
         dy = (dy / l) * R;
       }
       knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+      moveTravel = Math.max(moveTravel, l);
       player.joystickFrom(dx, dy, R);
     } else if (e.pointerId === lookId) {
       const dx = e.clientX - lx,
@@ -67,6 +72,8 @@ export function bindTouch(
       moveId = null;
       base.hidden = true;
       player.joystickFrom(0, 0, R);
+      // a quick touch that never became a drag is a tap, wherever it lands
+      if (moveTravel < 10 && performance.now() - moveT0 < 350) onTap(ox, oy);
     }
     if (e.pointerId === lookId) {
       lookId = null;

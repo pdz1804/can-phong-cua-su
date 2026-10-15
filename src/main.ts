@@ -81,6 +81,8 @@ const presets = makePresets();
 const col = new Colliders();
 scene.add(col.group);
 const building = buildRoom(scene, assets, col, presets[store.settings.weather].sky);
+// the room and hallway wall blockers (registered before any furniture); the door blocker is excluded
+const walls = col.group.children.filter((c) => !c.userData.isDoor);
 const furniture = buildFurniture(building.root, assets, col);
 const keep = buildKeepsakes(building.root, assets, furniture);
 const board = buildBoard(building.root, new Set([...store.seen]));
@@ -181,6 +183,7 @@ flow.on((p, prev) => {
   $('lobby').hidden = p !== 'lobby';
   $('hud').hidden = !['doorstep', 'explore'].includes(p);
   $('pause').hidden = p !== 'paused';
+  if (p === 'paused') requestAnimationFrame(() => $('resumeBtn').focus());
   building.ceiling.visible = building.hallCeiling.visible = furniture.fan.visible = p !== 'lobby';
   player.enabled = p === 'doorstep' || p === 'explore';
   if (!player.enabled) player.releaseKeys();
@@ -219,8 +222,8 @@ $('resumeBtn').onclick = () => {
 $('lobbyBtn').onclick = () => {
   flow.go('lobby');
   building.door.rotation.y = 0;
-  if (![...col.group.children].some((c) => c.userData.door))
-    col.box(DOOR.x, RD / 2 + 0.1, DOOR.w, 0.3, 'door').userData.door = true;
+  col.remove('door'); // never stack a second collider: exactly one door blocker exists while it is shut
+  col.box(DOOR.x, RD / 2 + 0.1, DOOR.w, 0.3, 'door').userData.isDoor = true;
   player.setColliders(col.group);
 };
 document.addEventListener('pointerlockchange', () => {
@@ -255,7 +258,8 @@ let aimed: Interactable | null = null;
 function pickAt(x: number, y: number, range: number): Interactable | null {
   ray.setFromCamera(new THREE.Vector2((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1), camera);
   ray.far = range;
-  const hit = ray.intersectObjects(pickables, false)[0];
+  // walls are tested too, so nothing can be opened through a wall
+  const hit = ray.intersectObjects([...pickables, ...walls], false)[0];
   return hit ? (meshToItem.get(hit.object) ?? null) : null;
 }
 function updateAim() {
@@ -402,7 +406,6 @@ let camTween: {
 async function startFinale() {
   if (!flow.go('finale')) return;
   document.exitPointerLock?.();
-  store.setFinaleDone();
   const fwd = new THREE.Vector3();
   camera.getWorldDirection(fwd);
   camTween = {
@@ -435,6 +438,7 @@ async function startFinale() {
   }
   $('finBack').classList.add('on');
   $('finBack').focus();
+  store.setFinaleDone(); // saved only once she has seen the whole message
 }
 $('finBack').onclick = () => {
   $('finale').hidden = true;

@@ -281,7 +281,7 @@ export function buildRoom(scene: THREE.Scene, a: Assets, col: Colliders, skyTex:
         root,
       );
   }
-  col.box(DOOR.x, RD / 2 + 0.1, DOOR.w, 0.3, 'door');
+  col.box(DOOR.x, RD / 2 + 0.1, DOOR.w, 0.3, 'door').userData.isDoor = true;
 
   // ---- window: frame, two hinged casements with the rainy-glass shader
   const winGroup = new THREE.Group();

@@ -30,12 +30,9 @@ export const MODEL_NAMES = [
   'lampWall',
   'sideTableDrawers',
   'closet',
-  'curtains',
-  'flowers',
   'houseplant',
   'mirror',
   'clownfish',
-  'laptop',
 ] as const;
 export type ModelName = (typeof MODEL_NAMES)[number];
 
