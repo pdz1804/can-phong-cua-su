@@ -22,6 +22,9 @@ test('lobby → door → walk into the room → read a memory, with no page erro
   await expect(page.locator('#lobby')).toBeVisible({ timeout: 60_000 });
   await page.locator('#weather label', { hasText: 'Hoàng hôn' }).click();
   await expect(page.locator('input[value=sunset]')).toBeChecked();
+  // the start button must be reachable on short screens (phone held sideways)
+  await page.locator('#startBtn').scrollIntoViewIfNeeded();
+  await expect(page.locator('#startBtn')).toBeInViewport();
   await page.locator('#startBtn').click();
   await expect(page.locator('#crosshair')).toBeVisible();
 

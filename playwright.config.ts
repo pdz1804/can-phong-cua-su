@@ -11,5 +11,9 @@ export default defineConfig({
   projects: [
     { name: 'desktop', use: { viewport: { width: 960, height: 600 } } },
     { name: 'phone', use: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true } },
+    {
+      name: 'phone-landscape',
+      use: { viewport: { width: 667, height: 375 }, hasTouch: true, isMobile: true },
+    },
   ],
 });

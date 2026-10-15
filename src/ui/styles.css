@@ -115,6 +115,9 @@ button {
   box-shadow: 0 30px 80px #0009;
   display: grid;
   gap: 14px;
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .lobby-card.small {
   width: min(360px, 100%);
