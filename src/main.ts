@@ -565,6 +565,8 @@ addEventListener('keydown', (e) => {
 if (location.hash === '#qa')
   Object.assign(window, {
     __qa: {
+      col,
+      doorOpen: () => doorOpen,
       player,
       flow,
       store,

@@ -35,7 +35,28 @@ test('lobby → door → walk into the room → read a memory, with no page erro
     // software rendering in CI is slow, so keep walking until the player is inside (or time out)
     const z = async () => page.evaluate(() => (window as unknown as { __qa: QA }).__qa.player.position.z);
     await page.keyboard.down('KeyW');
-    await expect.poll(z, { timeout: 120_000, intervals: [500] }).toBeLessThan(4.5);
+    try {
+      await expect.poll(z, { timeout: 120_000, intervals: [500] }).toBeLessThan(4.5);
+    } catch (e) {
+      // print what blocked the player, so a CI-only failure can be diagnosed from the log
+      const state = await page.evaluate(() => {
+        const q = (window as unknown as { __qa: Record<string, unknown> }).__qa as {
+          player: { position: { x: number; z: number } };
+          doorOpen: () => boolean;
+          col: { group: { children: { position: { x: number; z: number }; userData: object }[] } };
+        };
+        return {
+          x: q.player.position.x,
+          z: q.player.position.z,
+          doorOpen: q.doorOpen(),
+          blockersNearDoor: q.col.group.children
+            .filter((c) => Math.abs(c.position.z - 5.1) < 0.3)
+            .map((c) => ({ x: c.position.x, z: c.position.z, ud: c.userData })),
+        };
+      });
+      console.log('DIAG', JSON.stringify(state));
+      throw e;
+    }
     await page.keyboard.up('KeyW');
     expect(await z()).toBeGreaterThan(-4.8); // never through the back wall
     await page.evaluate(() => (window as unknown as { __qa: QA }).__qa.use('t0725'));
