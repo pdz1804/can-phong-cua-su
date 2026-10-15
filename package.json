@@ -1,0 +1,61 @@
+{
+  "name": "can-phong-cua-su",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Căn phòng của Su: a walkable 3D room of memories, a 20/10 gift.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build && node scripts/check-private.mjs dist",
+    "preview": "vite preview --port 4173 --strictPort",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "check:private": "node scripts/check-private.mjs src",
+    "prepare": "simple-git-hooks"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "19.6.1",
+    "@commitlint/config-conventional": "19.6.0",
+    "@eslint/js": "9.17.0",
+    "@playwright/test": "1.49.1",
+    "@types/three": "0.170.0",
+    "eslint": "9.17.0",
+    "globals": "15.14.0",
+    "lint-staged": "15.2.11",
+    "prettier": "3.4.2",
+    "simple-git-hooks": "2.11.1",
+    "typescript": "5.7.2",
+    "typescript-eslint": "8.18.2",
+    "vite": "6.0.7",
+    "vitest": "2.1.8"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged && npm run check:private",
+    "commit-msg": "npx --no -- commitlint --edit \"$1\"",
+    "pre-push": "npm run typecheck && npm test"
+  },
+  "lint-staged": {
+    "*.{ts,js,mjs}": [
+      "eslint --max-warnings=0",
+      "prettier --check"
+    ],
+    "*.{css,html,json,md,yml}": [
+      "prettier --check"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

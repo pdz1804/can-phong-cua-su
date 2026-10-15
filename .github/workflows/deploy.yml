@@ -1,0 +1,46 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # Workload Identity Federation
+
+jobs:
+  deploy:
+    # only ship a commit whose CI went green
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm }
+      - run: npm ci
+      - run: npm run build
+      # No long-lived key: WIF mints a short-lived token through a provider pinned to this repo.
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Deploy hosting
+        run: npx firebase-tools@13.29.1 deploy --only hosting:can-phong-cua-su --project gen-lang-client-0992083758 --non-interactive
+      # A green deploy only means files uploaded; check the page and a model are actually served.
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          url=https://can-phong-cua-su.web.app
+          curl -sSf --max-time 20 "$url" | grep -q 'Căn phòng của Su'
+          curl -sSf --max-time 20 -o /dev/null "$url/models/bedDouble.glb"
+          echo "live: $url"

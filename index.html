@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0d0b12" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Căn phòng của Su</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 56S6 40 6 22a13 13 0 0 1 26-4 13 13 0 0 1 26 4c0 18-26 34-26 34z' fill='%23d9687d'/%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Charm:wght@400;700&family=Be+Vietnam+Pro:wght@400;500;600&display=swap"
+    />
+  </head>
+  <body>
+    <canvas id="c" aria-label="Căn phòng của Su, một căn phòng nhỏ trong đêm"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <!-- loading -->
+    <section id="loading" class="screen">
+      <div class="load-box">
+        <div class="script big">Su ơi,</div>
+        <p>Anh đang dọn phòng cho em…</p>
+        <div class="bar"><i id="loadBar"></i></div>
+      </div>
+    </section>
+
+    <!-- lobby: dollhouse preview + weather + settings -->
+    <section id="lobby" class="screen" hidden>
+      <div class="lobby-card">
+        <div class="eyebrow">Quà 20/10 · từ Phú</div>
+        <h1 class="script">Căn phòng của Su</h1>
+        <p class="lede">
+          Anh dọn sẵn một căn phòng nhỏ, cất trong đó những ngày của hai đứa. Em ngắm thử từ trên cao, chọn
+          thời tiết em thích, rồi mình vào nhé.
+        </p>
+        <fieldset class="seg" id="weather">
+          <legend>Thời tiết</legend>
+          <label><input type="radio" name="weather" value="rain" /><span>Mưa đêm</span></label>
+          <label><input type="radio" name="weather" value="clear" /><span>Đêm trăng</span></label>
+          <label><input type="radio" name="weather" value="sunset" /><span>Hoàng hôn</span></label>
+        </fieldset>
+        <details class="settings">
+          <summary>Cài đặt</summary>
+          <div class="settings-grid">
+            <label class="row"><span>Nhạc nền</span><input type="checkbox" id="optMusic" /></label>
+            <label class="row"
+              ><span>Tiếng mưa, tiếng động</span><input type="checkbox" id="optAmbience"
+            /></label>
+            <label class="row"
+              ><span>Chất lượng hình</span>
+              <select id="optQuality">
+                <option value="auto">Tự động</option>
+                <option value="low">Nhẹ (điện thoại)</option>
+                <option value="high">Đẹp nhất (máy tính)</option>
+              </select>
+            </label>
+            <label class="row"
+              ><span>Độ nhạy khi nhìn</span><input type="range" id="optSens" min="0.5" max="2" step="0.1"
+            /></label>
+          </div>
+          <div class="controls-help" id="controlsHelp"></div>
+        </details>
+        <button id="startBtn" class="primary">Tới trước cửa phòng</button>
+        <small class="muted">Nên đeo tai nghe nhé. Mọi thứ em mở sẽ được nhớ trên máy này.</small>
+      </div>
+    </section>
+
+    <!-- in-game HUD -->
+    <div id="hud" hidden>
+      <div class="hud-top">
+        <div class="script hud-title">Căn phòng của Su</div>
+        <div class="hud-actions">
+          <div class="jar-meter" id="jarMeter" title="Hũ đom đóm"><i></i></div>
+          <button class="chip" id="pauseBtn" aria-label="Tạm dừng">Menu</button>
+        </div>
+      </div>
+      <div class="crosshair" id="crosshair" aria-hidden="true"></div>
+      <div class="prompt" id="prompt" hidden></div>
+      <div class="hint" id="hint"></div>
+      <div id="joy" class="joy" hidden><div id="joyKnob" class="joy-knob"></div></div>
+    </div>
+
+    <!-- letter -->
+    <div id="letter" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="letterTitle">
+      <article class="paper">
+        <div class="d" id="letterDate"></div>
+        <h2 id="letterTitle"></h2>
+        <p id="letterBody"></p>
+        <div class="sig"><span>— Phú</span><button id="letterClose">Cất lại</button></div>
+        <div class="seal" aria-hidden="true">♡</div>
+      </article>
+    </div>
+
+    <!-- notebook -->
+    <div id="notebook" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="nbHeading">
+      <article class="paper book">
+        <div class="d">Sổ tay về em</div>
+        <h2 id="nbHeading"></h2>
+        <ul id="nbLines"></ul>
+        <div class="sig book-nav">
+          <button id="nbPrev">Trang trước</button>
+          <span id="nbPage"></span>
+          <button id="nbNext">Trang sau</button>
+        </div>
+        <button id="nbClose" class="close-x" aria-label="Đóng sổ">×</button>
+      </article>
+    </div>
+
+    <!-- pause -->
+    <div id="pause" class="modal" hidden role="dialog" aria-modal="true" aria-label="Tạm dừng">
+      <div class="lobby-card small">
+        <h2 class="script">Nghỉ một chút</h2>
+        <button id="resumeBtn" class="primary">Tiếp tục</button>
+        <button id="lobbyBtn" class="ghost">Về sảnh, đổi thời tiết</button>
+        <div class="controls-help" id="controlsHelp2"></div>
+      </div>
+    </div>
+
+    <!-- finale -->
+    <div id="finale" hidden role="dialog" aria-modal="true" aria-label="Lời cuối">
+      <div class="fin" id="finLines"></div>
+      <button class="chip" id="finBack">Ở lại trong phòng</button>
+    </div>
+
+    <div id="fallback" hidden>
+      <p class="script">Máy em chưa mở được căn phòng 3D.</p>
+      <p>Thử mở bằng Chrome hoặc Safari mới nhé.</p>
+    </div>
+    <div class="credit">Phu Nguyen — HCMC, VN</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

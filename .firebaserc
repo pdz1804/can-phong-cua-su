@@ -1,0 +1,4 @@
+{
+  "projects": { "default": "gen-lang-client-0992083758" },
+  "targets": { "gen-lang-client-0992083758": { "hosting": { "can-phong-cua-su": ["can-phong-cua-su"] } } }
+}
