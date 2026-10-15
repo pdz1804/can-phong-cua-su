@@ -34,6 +34,13 @@ test('lobby → door → walk into the room → read a memory, with no page erro
       .toBe('explore');
     // software rendering in CI is slow, so keep walking until the player is inside (or time out)
     const z = async () => page.evaluate(() => (window as unknown as { __qa: QA }).__qa.player.position.z);
+    // CI grants pointer lock, so stray mouse events can turn the view; face the doorway straight on
+    await page.evaluate(() => {
+      const p = (
+        window as unknown as { __qa: { player: { teleport: (x: number, z: number, yaw: number) => void } } }
+      ).__qa.player;
+      p.teleport(-2.6, 6.4, 0);
+    });
     await page.keyboard.down('KeyW');
     try {
       await expect.poll(z, { timeout: 120_000, intervals: [500] }).toBeLessThan(4.5);
