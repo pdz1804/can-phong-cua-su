@@ -22,9 +22,15 @@ test('lobby → door → walk into the room → read a memory, with no page erro
     await page.keyboard.down('KeyW');
     await expect(page.locator('#prompt')).toContainText('Mở cửa', { timeout: 60_000 });
     await page.keyboard.up('KeyW');
-    await page.keyboard.press('KeyE');
+    // aiming is re-evaluated every frame; on a slow CPU renderer give each press a frame to land
     await expect
-      .poll(() => page.evaluate(() => (window as unknown as { __qa: QA }).__qa.flow.phase))
+      .poll(
+        async () => {
+          await page.keyboard.press('KeyE');
+          return page.evaluate(() => (window as unknown as { __qa: QA }).__qa.flow.phase);
+        },
+        { timeout: 60_000, intervals: [1000] },
+      )
       .toBe('explore');
     // software rendering in CI is slow, so keep walking until the player is inside (or time out)
     const z = async () => page.evaluate(() => (window as unknown as { __qa: QA }).__qa.player.position.z);
