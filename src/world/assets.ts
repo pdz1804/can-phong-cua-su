@@ -6,35 +6,31 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
-export const MODEL_NAMES = [
-  'bedDouble',
-  'desk',
-  'chairDesk',
-  'cabinetBedDrawerTable',
-  'bookcaseOpen',
-  'books',
-  'lampRoundFloor',
-  'rugRound',
-  'rugDoormat',
-  'pottedPlant',
-  'plantSmall1',
-  'plantSmall2',
-  'pillow',
-  'pillowBlue',
-  'bear',
-  'radio',
-  'loungeDesignChair',
-  'tableRound',
-  'coatRack',
-  'ceilingFan',
-  'lampWall',
-  'sideTableDrawers',
-  'closet',
-  'houseplant',
-  'mirror',
-  'clownfish',
+/** Single-file GLB models (none at the moment: every piece now comes from KayKit or is built in code). */
+export const MODEL_NAMES = [] as const;
+/** KayKit Furniture Bits (CC0): .gltf + .bin sharing one pastel-recoloured palette texture. */
+export const KAYKIT_NAMES = [
+  'bed_double_A',
+  'table_medium_long',
+  'chair_A',
+  'cabinet_small_decorated',
+  'cabinet_medium_decorated',
+  'cabinet_medium',
+  'cabinet_small',
+  'shelf_B_large_decorated',
+  'shelf_A_big',
+  'armchair',
+  'armchair_pillows',
+  'rug_oval_A',
+  'rug_rectangle_stripes_A',
+  'lamp_standing',
+  'pictureframe_large_A',
+  'pictureframe_medium',
+  'pictureframe_standing_A',
+  'book_set',
+  'cactus_medium_A',
 ] as const;
-export type ModelName = (typeof MODEL_NAMES)[number];
+export type ModelName = (typeof MODEL_NAMES)[number] | (typeof KAYKIT_NAMES)[number];
 
 export interface Assets {
   models: Record<ModelName, THREE.Group>;
@@ -62,9 +58,11 @@ export async function loadAssets(onProgress: (ratio: number) => void): Promise<A
   const [hdr, ...groups] = await Promise.all([
     new RGBELoader(manager).loadAsync(`${base}textures/room.hdr`),
     ...MODEL_NAMES.map((n) => gltf.loadAsync(`${base}models/${n}.glb`).then((g) => g.scene)),
+    ...KAYKIT_NAMES.map((n) => gltf.loadAsync(`${base}models/kaykit/${n}.gltf`).then((g) => g.scene)),
   ]);
   hdr.mapping = THREE.EquirectangularReflectionMapping;
-  const models = Object.fromEntries(MODEL_NAMES.map((n, i) => [n, groups[i]])) as Assets['models'];
+  const names = [...MODEL_NAMES, ...KAYKIT_NAMES];
+  const models = Object.fromEntries(names.map((n, i) => [n, groups[i]])) as Assets['models'];
   return {
     models,
     hdr,
@@ -116,6 +114,8 @@ export function place(src: THREE.Group, o: PlaceOpts): THREE.Group {
       m.material = mats.map((mt) => {
         const c2 = (mt as THREE.MeshStandardMaterial).clone();
         if ('envMapIntensity' in c2) c2.envMapIntensity = 0.7;
+        if ('roughness' in c2) c2.roughness = Math.max(c2.roughness, 0.72); // soft matte, never plasticky
+        if (c2.map) c2.map.anisotropy = 8;
         if (o.tint && 'color' in c2) c2.color.lerp(new THREE.Color(o.tint), 0.55);
         return c2;
       }) as unknown as THREE.Material;

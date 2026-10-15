@@ -5,7 +5,8 @@
  */
 import * as THREE from 'three';
 import { Assets } from './assets';
-import { add, canvasTex, Colliders, M, makeCanvas, RB, rnd } from './kit';
+import { photoTexture } from './photos';
+import { add, canvasTex, Colliders, M, makeCanvas, RB } from './kit';
 
 export const RW = 10,
   RD = 10,
@@ -67,16 +68,28 @@ export function buildRoom(scene: THREE.Scene, a: Assets, col: Colliders, skyTex:
     roughnessMap: a.floor.rough,
     envMapIntensity: 0.5,
   });
+  // Soft floral wallpaper (drawn once, tiled every 2.5 m) over a fine plaster normal map.
+  // Shape-built walls use metre/2.5 UVs (repeat 1); box walls span 0..1 over 10 x 3.2 m (repeat 4 x 1.28).
+  const paper = wallpaper();
   const wallMat = new THREE.MeshStandardMaterial({
-    color: 0xfff6f2,
-    map: a.wall.map,
+    map: paper,
     normalMap: a.wall.normal,
-    roughnessMap: a.wall.rough,
-    normalScale: new THREE.Vector2(0.6, 0.6),
-    envMapIntensity: 0.35,
+    normalScale: new THREE.Vector2(0.35, 0.35),
+    roughness: 0.92,
+    envMapIntensity: 0.3,
   });
+  const boxPaper = paper.clone();
+  boxPaper.repeat.set(4, 1.28);
+  boxPaper.needsUpdate = true;
+  const boxWallMat = wallMat.clone();
+  boxWallMat.map = boxPaper;
+  // hallway: the same wallpaper, a little warmer, tiled for its shorter walls
+  const hallPaper = paper.clone();
+  hallPaper.repeat.set(2, 1.2);
+  hallPaper.needsUpdate = true;
   const hallWallMat = wallMat.clone();
-  hallWallMat.color.set(0xf3e6d6);
+  hallWallMat.map = hallPaper;
+  hallWallMat.color.set(0xfff4ea);
   const ceilMat = M(0xf4ebe3, { roughness: 1 });
   const trim = M(0xfaf4ec, { roughness: 0.5 });
 
@@ -101,8 +114,9 @@ export function buildRoom(scene: THREE.Scene, a: Assets, col: Colliders, skyTex:
     true,
     true,
   );
-  add(new THREE.BoxGeometry(0.2, RH, RD), wallMat, [-RW / 2 - 0.1, RH / 2, 0], null, root, true, true);
-  add(new THREE.BoxGeometry(0.2, RH, RD), wallMat, [RW / 2 + 0.1, RH / 2, 0], null, root, true, true);
+  add(new THREE.BoxGeometry(0.2, RH, RD), boxWallMat, [-RW / 2 - 0.1, RH / 2, 0], null, root, true, true);
+  add(new THREE.BoxGeometry(0.2, RH, RD), boxWallMat, [RW / 2 + 0.1, RH / 2, 0], null, root, true, true);
+  wainscot(root, trim);
   for (const [x, z, l, r] of [
     [0, -RD / 2 + 0.012, RW, 0],
     [0, RD / 2 - 0.012, RW, 0],
@@ -176,25 +190,7 @@ export function buildRoom(scene: THREE.Scene, a: Assets, col: Colliders, skyTex:
     f.rotation.y = Math.PI;
     root.add(f);
     add(RB(0.9, 0.65, 0.03, 0.01), M(0x6b4a34, { roughness: 0.45 }), [0, 0, 0], null, f);
-    const art = canvasTex(
-      makeCanvas(512, 360, (g, w, h) => {
-        const gr = g.createLinearGradient(0, 0, 0, h);
-        gr.addColorStop(0, '#f8d7c9');
-        gr.addColorStop(1, '#f3b6c2');
-        g.fillStyle = gr;
-        g.fillRect(0, 0, w, h);
-        for (let i = 0; i < 7; i++) {
-          g.fillStyle = `hsla(${rnd(330, 360)},70%,${rnd(70, 85)}%,.9)`;
-          g.beginPath();
-          g.arc(rnd(60, w - 60), rnd(80, h - 60), rnd(28, 60), 0, 7);
-          g.fill();
-        }
-        g.fillStyle = '#5a3b3b';
-        g.font = '700 52px Charm, cursive';
-        g.textAlign = 'center';
-        g.fillText('nhà có hoa', w / 2, h - 40);
-      }),
-    );
+    const art = photoTexture('hall-print', 'sala', 640, 448);
     add(
       new THREE.PlaneGeometry(0.8, 0.56),
       M(0xffffff, { map: art, roughness: 0.6 }),
@@ -355,4 +351,65 @@ export function buildRoom(scene: THREE.Scene, a: Assets, col: Colliders, skyTex:
   add(new THREE.PlaneGeometry(26, 19), skyMat, [WIN.x, 1.5, -15], null, root, false, false);
 
   return { root, ceiling, frontWall, hallCeiling, door, paneL, paneR, glassUniforms, winGroup, skyMat };
+}
+
+/** Tileable cream wallpaper with tiny pink and sage flowers and a faint stripe. */
+function wallpaper() {
+  const t = canvasTex(
+    makeCanvas(512, 512, (g, w, h) => {
+      g.fillStyle = '#fbf1ea';
+      g.fillRect(0, 0, w, h);
+      for (let x = 0; x < w; x += 64) {
+        g.fillStyle = 'rgba(232, 196, 196, 0.18)';
+        g.fillRect(x, 0, 22, h);
+      }
+      const flower = (cx: number, cy: number, c: string) => {
+        g.fillStyle = c;
+        for (let i = 0; i < 5; i++) {
+          const a2 = (i / 5) * Math.PI * 2;
+          g.beginPath();
+          g.ellipse(cx + Math.cos(a2) * 3.4, cy + Math.sin(a2) * 3.4, 2.9, 1.9, a2, 0, 7);
+          g.fill();
+        }
+        g.fillStyle = '#f2cf7a';
+        g.beginPath();
+        g.arc(cx, cy, 2.2, 0, 7);
+        g.fill();
+        g.strokeStyle = 'rgba(126, 160, 120, 0.55)';
+        g.lineWidth = 1.6;
+        g.beginPath();
+        g.moveTo(cx, cy + 6);
+        g.quadraticCurveTo(cx + 6, cy + 14, cx + 2, cy + 20);
+        g.stroke();
+      };
+      for (let y = 0; y < 8; y++)
+        for (let x = 0; x < 8; x++) {
+          const ox = x * 64 + (y % 2 ? 32 : 0) + 11,
+            oy = y * 64 + 20;
+          flower(ox % w, oy, y % 3 === 0 ? 'rgba(226, 160, 174, 0.42)' : 'rgba(236, 192, 200, 0.38)');
+        }
+    }),
+  );
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+/** White panelled wainscoting with a chair rail on the four inside walls (split around the door). */
+function wainscot(root: THREE.Group, trim: THREE.Material) {
+  const panel = M(0xfaf6f0, { roughness: 0.55 });
+  const H = 0.95;
+  const runs: [number, number, number, number][] = [
+    // x, z, length, rotationY  (along the inside face of each wall)
+    [0, -RD / 2 + 0.015, RW, 0],
+    [-RW / 2 + 0.015, 0, RD, Math.PI / 2],
+    [RW / 2 - 0.015, 0, RD, Math.PI / 2],
+  ];
+  const doorL = DOOR.x - DOOR.w / 2 - 0.08,
+    doorR = DOOR.x + DOOR.w / 2 + 0.08;
+  runs.push([(-RW / 2 + doorL) / 2, RD / 2 - 0.015, doorL + RW / 2, 0]);
+  runs.push([(doorR + RW / 2) / 2, RD / 2 - 0.015, RW / 2 - doorR, 0]);
+  for (const [x, z, l, r] of runs) {
+    add(RB(l, H, 0.02, 0.004), panel, [x, H / 2, z], [0, r, 0], root, false, true);
+    add(RB(l, 0.045, 0.045, 0.01), trim, [x, H, z], [0, r, 0], root, false);
+  }
 }

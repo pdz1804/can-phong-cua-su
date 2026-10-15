@@ -2,7 +2,8 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: 'tests/e2e',
-  timeout: 240_000,
+  timeout: 480_000,
+  workers: 1, // CPU-rendered WebGL is heavy; parallel runs starve each other and time out
   use: {
     baseURL: 'http://localhost:4173',
     launchOptions: { args: ['--use-gl=angle', '--use-angle=swiftshader'] },

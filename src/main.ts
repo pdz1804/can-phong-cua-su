@@ -8,6 +8,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { Flow } from './core/flow';
 import { Store, Weather } from './core/store';
 import { loadAssets } from './world/assets';
@@ -49,14 +50,21 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, lowGfx() ? 1.25 : 1.75));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMapping = THREE.NeutralToneMapping; // keeps pinks and creams true instead of pushing them orange
 renderer.toneMappingExposure = 1.1;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x07060c);
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.05, 80);
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.6, 0.6, 0.85);
+// soft contact shadows in corners and under furniture; desktop only (too heavy for phones)
+if (!lowGfx()) {
+  const gtao = new GTAOPass(scene, camera, innerWidth, innerHeight);
+  gtao.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1.4, thickness: 1.2, scale: 1.1 });
+  gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
+  composer.addPass(gtao);
+}
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.32, 0.5, 0.92);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 if (lowGfx()) composer.setPixelRatio(renderer.getPixelRatio() * 0.75);
@@ -493,7 +501,7 @@ renderer.setAnimationLoop(() => {
   keep.jarGlow.intensity = finaleT >= 0 || store.finaleDone ? 0 : store.glow * 1.4;
   atmo.update(dt, T, { jarWorld, glow: store.finaleDone ? 1 : store.glow, finaleT });
   // living details
-  furniture.fan.rotation.y += dt * 0.9;
+  furniture.fan.rotation.z = Math.sin(T * 0.6) * 0.025; // the paper lantern sways a little
   furniture.bulbs.forEach(
     (b) =>
       ((b.material as THREE.MeshStandardMaterial).emissiveIntensity =
@@ -565,6 +573,7 @@ addEventListener('keydown', (e) => {
 if (location.hash === '#qa')
   Object.assign(window, {
     __qa: {
+      scene,
       col,
       doorOpen: () => doorOpen,
       player,

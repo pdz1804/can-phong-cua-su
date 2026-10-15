@@ -4,7 +4,7 @@
  * things like "a blue heart mirror box Su made by hand".
  */
 import * as THREE from 'three';
-import { Assets, place } from './assets';
+import { Assets } from './assets';
 import { add, canvasTex, Interactable, M, makeCanvas, RB, rnd } from './kit';
 import { Furniture } from './furniture';
 import { RD, RW, WIN } from './room';
@@ -17,6 +17,24 @@ function topOf(o: THREE.Object3D) {
   return { y: b.max.y, c: b.getCenter(new THREE.Vector3()) };
 }
 
+/** Soft fabric: physical sheen gives the velvety rim light real plush toys have. */
+function fabric(color: number, fur?: THREE.Texture) {
+  return new THREE.MeshPhysicalMaterial({
+    color,
+    roughness: 0.95,
+    sheen: 1,
+    sheenRoughness: 0.55,
+    sheenColor: new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.55),
+    normalMap: fur,
+    normalScale: new THREE.Vector2(0.9, 0.9),
+    envMapIntensity: 0.5,
+  });
+}
+
+/**
+ * A seated plush (teddy-style): pear body, squashed head, inner ears, glossy eyes with a catch-light,
+ * stitched nose and smile, blush, arms resting forward, legs out front with paw pads.
+ */
 function plush(
   parent: THREE.Object3D,
   pos: [number, number, number],
@@ -30,30 +48,58 @@ function plush(
   g.position.set(...pos);
   g.scale.setScalar(s);
   parent.add(g);
-  const fm = M(body, { roughness: 1, normalMap: fur, normalScale: new THREE.Vector2(0.8, 0.8) }),
-    bm = M(belly, { roughness: 1 });
-  add(new THREE.SphereGeometry(0.2, 32, 24), fm, [0, 0.2, 0], null, g).scale.set(1, 1, 0.9);
-  add(new THREE.SphereGeometry(0.12, 24, 16), bm, [0, 0.2, 0.12], null, g).scale.set(1, 1.1, 0.5);
-  add(new THREE.SphereGeometry(0.16, 32, 24), fm, [0, 0.48, 0.02], null, g);
-  add(new THREE.SphereGeometry(0.06, 20, 16), bm, [0, 0.45, 0.14], null, g).scale.set(1, 0.75, 0.7);
+  const fm = fabric(body, fur),
+    bm = fabric(belly, fur),
+    em = fabric(ear, fur);
+  const dark = M(0x2a1d1a, { roughness: 0.15, envMapIntensity: 1.2 });
+  // pear-shaped seated body
+  const prof: THREE.Vector2[] = [];
+  for (let i = 0; i <= 16; i++) {
+    const t = i / 16;
+    prof.push(new THREE.Vector2(0.01 + Math.sin(t * Math.PI) * (0.2 - t * 0.07), t * 0.4));
+  }
+  add(new THREE.LatheGeometry(prof, 40), fm, [0, 0.02, 0], null, g).scale.set(1, 1, 0.88);
+  add(new THREE.SphereGeometry(0.12, 28, 18), bm, [0, 0.18, 0.1], null, g).scale.set(1, 1.15, 0.45);
+  // head
+  add(new THREE.SphereGeometry(0.165, 40, 28), fm, [0, 0.52, 0.02], null, g).scale.set(1.08, 0.95, 0.98);
+  add(new THREE.SphereGeometry(0.068, 24, 16), bm, [0, 0.48, 0.15], null, g).scale.set(1.15, 0.82, 0.75);
+  add(new THREE.SphereGeometry(0.02, 14, 10), dark, [0, 0.505, 0.205], null, g).scale.set(1.3, 0.85, 0.8);
+  add(new THREE.TorusGeometry(0.016, 0.0035, 6, 16, Math.PI), dark, [0, 0.468, 0.199], [0, 0, Math.PI], g);
   for (const k of [-1, 1]) {
-    add(new THREE.SphereGeometry(0.055, 16, 12), M(ear, { roughness: 1 }), [k * 0.11, 0.61, 0], null, g);
+    // ears with an inner patch
+    add(new THREE.SphereGeometry(0.058, 20, 14), em, [k * 0.12, 0.655, 0], null, g).scale.set(1, 1, 0.55);
+    add(new THREE.SphereGeometry(0.034, 16, 10), bm, [k * 0.12, 0.652, 0.028], null, g).scale.set(1, 1, 0.3);
+    // glossy eyes with a tiny catch-light
+    add(new THREE.SphereGeometry(0.019, 16, 12), dark, [k * 0.062, 0.545, 0.158], null, g);
     add(
-      new THREE.SphereGeometry(0.016, 10, 8),
-      M(0x241a18, { roughness: 0.2, envMapIntensity: 1 }),
-      [k * 0.055, 0.5, 0.145],
+      new THREE.SphereGeometry(0.005, 8, 6),
+      new THREE.MeshBasicMaterial({ color: 0xffffff }),
+      [k * 0.062 + 0.006, 0.552, 0.175],
       null,
       g,
+      false,
+      false,
     );
+    // blush
+    add(
+      new THREE.CircleGeometry(0.022, 20),
+      M(0xf2a3b3, { roughness: 1, transparent: true, opacity: 0.75 }),
+      [k * 0.105, 0.49, 0.155],
+      [0, k * 0.55, 0],
+      g,
+      false,
+    );
+    // arms resting forward, legs out front with paw pads
+    add(new THREE.CapsuleGeometry(0.045, 0.12, 8, 16), fm, [k * 0.17, 0.25, 0.07], [0.9, 0, k * 0.35], g);
+    add(
+      new THREE.CapsuleGeometry(0.058, 0.1, 8, 16),
+      fm,
+      [k * 0.09, 0.055, 0.15],
+      [Math.PI / 2, 0, k * 0.15],
+      g,
+    );
+    add(new THREE.CircleGeometry(0.04, 20), bm, [k * 0.09, 0.055, 0.258], null, g, false);
   }
-  add(new THREE.SphereGeometry(0.016, 10, 8), M(0x3a2420, { roughness: 0.3 }), [0, 0.465, 0.2], null, g);
-  for (const [x, y, z] of [
-    [-0.17, 0.24, 0.06],
-    [0.17, 0.24, 0.06],
-    [-0.1, 0.04, 0.12],
-    [0.1, 0.04, 0.12],
-  ] as const)
-    add(new THREE.SphereGeometry(0.065, 16, 12), fm, [x, y, z], null, g);
   return g;
 }
 
@@ -70,6 +116,52 @@ const glass = (o = 0.4) =>
   });
 
 const BUILD: Record<string, Builder> = {
+  bear(g, a) {
+    // the sale-hunted teddy from 25.07: honey fur, cream muzzle, a pink ribbon
+    const b = plush(g, [0, 0, 0], 1, 0xd8a774, 0xf3dcc0, 0xc8925f, a.furNormal);
+    add(
+      new THREE.TorusGeometry(0.075, 0.02, 10, 28),
+      M(0xe58aa0, { roughness: 0.5 }),
+      [0, 0.37, 0.07],
+      [Math.PI / 2.3, 0, 0],
+      b,
+    );
+  },
+  radio(g) {
+    // a small retro radio on a little stool next to the nightstand
+    add(
+      new THREE.CylinderGeometry(0.16, 0.16, 0.42, 24),
+      M(0xe6c9a3, { roughness: 0.6 }),
+      [0, 0.21, 0],
+      null,
+      g,
+    );
+    add(RB(0.34, 0.2, 0.14, 0.05), M(0xf2b8c4, { roughness: 0.5 }), [0, 0.52, 0], null, g);
+    add(new THREE.CircleGeometry(0.06, 32), M(0xf6ece2, { roughness: 0.8 }), [-0.07, 0.52, 0.071], null, g);
+    for (let k = 0; k < 5; k++)
+      add(
+        new THREE.TorusGeometry(0.012 + k * 0.01, 0.002, 4, 24),
+        M(0xd9b8a0),
+        [-0.07, 0.52, 0.072],
+        null,
+        g,
+        false,
+      );
+    add(
+      new THREE.CylinderGeometry(0.018, 0.018, 0.02, 16),
+      M(0xfff6ee),
+      [0.09, 0.55, 0.075],
+      [Math.PI / 2, 0, 0],
+      g,
+    );
+    add(
+      new THREE.CylinderGeometry(0.003, 0.003, 0.26, 6),
+      M(0xd8d0c8, { metalness: 0.8 }),
+      [0.1, 0.72, -0.03],
+      [0, 0, -0.4],
+      g,
+    );
+  },
   lily(g) {
     add(
       new THREE.LatheGeometry(
@@ -245,7 +337,7 @@ const BUILD: Record<string, Builder> = {
     g.add(bl);
   },
   kitty(g) {
-    const w = M(0xffffff, { roughness: 0.95 });
+    const w = fabric(0xfffdfb);
     add(new THREE.ConeGeometry(0.17, 0.3, 32), M(0xf49ab0, { roughness: 0.8 }), [0, 0.16, 0], null, g);
     add(new THREE.SphereGeometry(0.18, 32, 24), w, [0, 0.44, 0], null, g).scale.set(1.25, 0.9, 0.95);
     for (const k of [-1, 1]) {
@@ -273,8 +365,8 @@ const BUILD: Record<string, Builder> = {
     plush(g, [0.07, 0, 0], 0.3, 0x9a6a48, 0xd8b494, 0x7d5236, a.furNormal);
   },
   stitch(g, a) {
-    const sm = M(0x5e93df, { roughness: 1, normalMap: a.furNormal }),
-      lb = M(0xa9cdf5, { roughness: 1 });
+    const sm = fabric(0x5e93df, a.furNormal),
+      lb = fabric(0xa9cdf5, a.furNormal);
     add(new THREE.SphereGeometry(0.11, 24, 16), sm, [0, 0.09, 0], null, g).scale.set(1, 0.9, 0.9);
     add(new THREE.SphereGeometry(0.06, 16, 12), lb, [0, 0.08, 0.07], null, g).scale.set(1, 1.1, 0.5);
     add(new THREE.SphereGeometry(0.1, 24, 16), sm, [0, 0.25, 0.01], null, g).scale.set(1.2, 0.9, 1);
@@ -310,11 +402,7 @@ const BUILD: Record<string, Builder> = {
     plush(b, [0, 0.12, 0.16], 0.35, 0xe6c8a6, 0xf1d9bd, 0xd5b28c, a.furNormal);
   },
   chickenPlush(g, a) {
-    const crust = M(0xd28b3b, {
-      roughness: 1,
-      normalMap: a.furNormal,
-      normalScale: new THREE.Vector2(1.5, 1.5),
-    });
+    const crust = fabric(0xd9944a, a.furNormal);
     add(new THREE.SphereGeometry(0.12, 24, 16), crust, [0, 0.12, 0], null, g).scale.set(1, 1.2, 0.9);
     add(new THREE.CylinderGeometry(0.025, 0.03, 0.12, 12), M(0xfbf2e2), [0, -0.03, 0], null, g);
     for (const k of [-1, 1]) {
@@ -973,16 +1061,7 @@ export function buildKeepsakes(root: THREE.Group, a: Assets, f: Furniture): Keep
   // nightstand
   at('lanterns', night.c.x, night.y, night.c.z - 0.08, 0.9, -Math.PI / 2);
   at('gongcha', night.c.x - 0.05, night.y, night.c.z + 0.14, 0.75);
-  // radio (Kenney model) on the nightstand side
-  {
-    const g = place(a.models.radio, {
-      pos: [night.c.x - 0.1, 0, night.c.z - 0.65],
-      height: 0.5,
-      rotY: -Math.PI / 2,
-      parent: root,
-    });
-    items.push({ id: 'radio', label: LABELS.radio, object: g, kind: 'keepsake' });
-  }
+  at('radio', night.c.x - 0.1, 0, night.c.z - 0.65, 1, -Math.PI / 2);
   // bed
   at('stitch', bed.c.x + 0.65, bed.y - 0.12, bed.c.z - 0.35, 1.35, -Math.PI / 2 - 0.3);
   at('pajamaBear', bed.c.x + 0.55, bed.y - 0.14, bed.c.z + 0.3, 1, -Math.PI / 2 + 0.3);
@@ -994,15 +1073,7 @@ export function buildKeepsakes(root: THREE.Group, a: Assets, f: Furniture): Keep
   at('perfume', dress.c.x + 0.22, dress.y, dress.c.z + 0.05, 1);
   at('giftBox', dress.c.x + 0.95, 0, dress.c.z - 0.2, 1, 0.3);
   // shelf on the left wall
-  {
-    const g = place(a.models.bear, {
-      pos: [shelf.c.x + 0.02, shelf.y, shelf.c.z + 0.5],
-      height: 0.34,
-      rotY: Math.PI / 2,
-      parent: root,
-    });
-    items.push({ id: 'bear', label: LABELS.bear, object: g, kind: 'keepsake' });
-  }
+  at('bear', shelf.c.x + 0.02, shelf.y, shelf.c.z + 0.5, 0.42, Math.PI / 2);
   at('hydrangea', shelf.c.x, shelf.y, shelf.c.z - 0.05, 0.6);
   at('kitty', shelf.c.x + 0.02, shelf.y, shelf.c.z - 0.55, 0.5, Math.PI / 2.2);
   at('bubu', shelf.c.x + 0.02, shelf.y, shelf.c.z + 0.18, 1, Math.PI / 2.1);
@@ -1023,7 +1094,7 @@ export function buildKeepsakes(root: THREE.Group, a: Assets, f: Furniture): Keep
   at('pizza', -2.6, 0, 2.4, 1, 0.4);
   at('flowerShop', -3.4, 0, -RD / 2 + 0.45, 1);
 
-  // fish tank on the low cabinet, with CC0 clownfish swimming
+  // fish tank on the low cabinet
   const fishTank = new THREE.Group();
   fishTank.position.set(cab.c.x, cab.y, cab.c.z);
   fishTank.scale.setScalar(0.75);
@@ -1049,11 +1120,41 @@ export function buildKeepsakes(root: THREE.Group, a: Assets, f: Furniture): Keep
       fishTank,
     );
   }
-  const tl = new THREE.PointLight(0x8fd4ff, 0.6, 1.2, 2);
+  const tl = new THREE.PointLight(0x8fd4ff, 0.25, 1.0, 2);
   tl.position.set(0, 0.4, 0);
   fishTank.add(tl);
-  for (let k = 0; k < 6; k++) {
-    const fish = place(a.models.clownfish, { pos: [0, 0, 0], width: 0.07, parent: fishTank });
+  // guppies (bảy màu) and mollies, the fish she picked on 27.09: a soft body and a fanned tail each.
+  // Built here rather than loaded: a rigged fish model ignores its parent's scale and renders huge.
+  const FISH = [0xff7a59, 0x6fd3ff, 0xffd34d, 0xff6fae, 0x9b7bff, 0x6fe3a5, 0x3a3340];
+  for (let k = 0; k < FISH.length; k++) {
+    const c = FISH[k];
+    const fish = new THREE.Group();
+    fishTank.add(fish);
+    add(
+      new THREE.SphereGeometry(0.02, 14, 10),
+      M(c, { emissive: c, emissiveIntensity: 0.25, roughness: 0.3 }),
+      [0, 0, 0],
+      null,
+      fish,
+      false,
+    ).scale.set(1.7, 0.95, 0.8);
+    const tail = add(
+      new THREE.ConeGeometry(0.024, 0.04, 12),
+      M(c, { transparent: true, opacity: 0.85, roughness: 0.4 }),
+      [-0.045, 0, 0],
+      [0, 0, Math.PI / 2],
+      fish,
+      false,
+    );
+    tail.scale.z = 0.25;
+    add(
+      new THREE.SphereGeometry(0.004, 6, 4),
+      M(0x111111, { roughness: 0.2 }),
+      [0.024, 0.005, 0.012],
+      null,
+      fish,
+      false,
+    );
     fish.userData = {
       r: rnd(0.08, 0.18),
       s: rnd(0.4, 0.9) * (k % 2 ? 1 : -1),

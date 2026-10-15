@@ -20,7 +20,7 @@ export interface Atmosphere {
 export function buildAtmosphere(scene: THREE.Scene, lampWorld: THREE.Vector3, mobile: boolean): Atmosphere {
   const hemi = new THREE.HemisphereLight(0xffd8c4, 0x4a2e24, 0.35);
   scene.add(hemi);
-  const lampSpot = new THREE.SpotLight(0xffbf73, 9, 7, Math.PI / 2.6, 0.85, 1.5);
+  const lampSpot = new THREE.SpotLight(0xffc690, 5.5, 7, Math.PI / 2.6, 0.9, 1.5);
   lampSpot.position.copy(lampWorld);
   lampSpot.target.position.set(lampWorld.x - 0.6, 0, lampWorld.z + 1.2);
   lampSpot.castShadow = true;
@@ -28,7 +28,7 @@ export function buildAtmosphere(scene: THREE.Scene, lampWorld: THREE.Vector3, mo
   lampSpot.shadow.bias = -0.0003;
   lampSpot.shadow.normalBias = 0.02;
   scene.add(lampSpot, lampSpot.target);
-  const lampGlow = new THREE.PointLight(0xffb36b, 3.2, 6, 1.6);
+  const lampGlow = new THREE.PointLight(0xffc28a, 1.6, 6, 1.6);
   lampGlow.position.copy(lampWorld).add(new THREE.Vector3(0, -0.05, 0.15));
   scene.add(lampGlow);
   const moon = new THREE.DirectionalLight(0x9fb0ff, 0.85);
@@ -69,7 +69,7 @@ export function buildAtmosphere(scene: THREE.Scene, lampWorld: THREE.Vector3, mo
     });
   const lampBeam = new THREE.Mesh(
     new THREE.CylinderGeometry(0.09, 0.75, 0.78, 48, 1, true),
-    beamMat(0xffb867, 0.16),
+    beamMat(0xffc690, 0.07),
   );
   lampBeam.position.copy(lampWorld).add(new THREE.Vector3(-0.05, -0.4, 0.08));
   scene.add(lampBeam);
@@ -240,8 +240,8 @@ export function buildAtmosphere(scene: THREE.Scene, lampWorld: THREE.Vector3, mo
       hemi.color.setHex(p.hemi.sky);
       hemi.groundColor.setHex(p.hemi.ground);
       hemi.intensity = p.hemi.intensity;
-      lampSpot.intensity = 9 * p.lampScale;
-      lampGlow.intensity = 3.2 * p.lampScale;
+      lampSpot.intensity = 5.5 * p.lampScale;
+      lampGlow.intensity = 1.6 * p.lampScale;
       moonBeamMat.uniforms.uStr.value = p.rain ? 0.07 : 0.1;
       (moonBeamMat.uniforms.uColor.value as THREE.Color).setHex(p.moon.color);
     },
