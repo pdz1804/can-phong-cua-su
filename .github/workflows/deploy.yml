@@ -45,6 +45,8 @@ jobs:
         run: |
           set -euo pipefail
           url=https://can-phong-cua-su.web.app
-          curl -sSf --max-time 20 "$url" | grep -q 'Căn phòng của Su'
+          # read the whole page first: piping into grep -q closes early and makes curl exit 23
+          html=$(curl -sSf --max-time 20 "$url")
+          grep -q 'Căn phòng của Su' <<<"$html"
           curl -sSf --max-time 20 -o /dev/null "$url/models/bedDouble.glb"
           echo "live: $url"
