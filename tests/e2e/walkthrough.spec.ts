@@ -11,6 +11,13 @@ test('lobby → door → walk into the room → read a memory, with no page erro
   page.on('pageerror', (e) => errors.push(String(e)));
   // CI renders on the CPU, so use the light graphics preset to keep the frame rate usable
   await page.addInitScript(() => localStorage.setItem('su-settings', JSON.stringify({ quality: 'low' })));
+  // Headless CI grants and then drops pointer lock, which (correctly) pauses the game.
+  // Run the walkthrough as a browser that refuses pointer lock, so keyboard play stays live.
+  await page.addInitScript(() => {
+    Element.prototype.requestPointerLock = function () {
+      return Promise.reject(new Error('pointer lock disabled in tests'));
+    } as unknown as typeof Element.prototype.requestPointerLock;
+  });
   await page.goto('/#qa');
   await expect(page.locator('#lobby')).toBeVisible({ timeout: 60_000 });
   await page.locator('#weather label', { hasText: 'Hoàng hôn' }).click();
@@ -56,6 +63,7 @@ test('lobby → door → walk into the room → read a memory, with no page erro
           x: q.player.position.x,
           z: q.player.position.z,
           doorOpen: q.doorOpen(),
+          phase: (q as unknown as { flow: { phase: string } }).flow.phase,
           blockersNearDoor: q.col.group.children
             .filter((c) => Math.abs(c.position.z - 5.1) < 0.3)
             .map((c) => ({ x: c.position.x, z: c.position.z, ud: c.userData })),
