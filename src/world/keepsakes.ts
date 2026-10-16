@@ -8,6 +8,7 @@ import { Assets } from './assets';
 import { add, canvasTex, Interactable, M, makeCanvas, RB, rnd } from './kit';
 import { Furniture } from './furniture';
 import { RD, RW, WIN } from './room';
+import { swapInDesignerModel } from './designer-models';
 
 type Builder = (g: THREE.Group, a: Assets) => void;
 
@@ -1069,6 +1070,7 @@ export function buildKeepsakes(root: THREE.Group, a: Assets, f: Furniture): Keep
       }
     });
     items.push({ id, label: LABELS[id], object: g, kind: id === 'notebook' ? 'notebook' : 'keepsake' });
+    void swapInDesignerModel(id, g); // the designer's model replaces this one once it loads
     return g;
   };
   // desk
