@@ -16,6 +16,7 @@ import { Colliders, Interactable } from './world/kit';
 import { buildRoom, DOOR, RD, WIN } from './world/room';
 import { buildFurniture } from './world/furniture';
 import { buildHallway } from './world/hallway';
+import { buildLobbyStage } from './world/lobby-stage';
 import { buildKeepsakes } from './world/keepsakes';
 import { buildBoard, curl } from './world/board';
 import { buildAtmosphere } from './world/atmosphere';
@@ -57,13 +58,15 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.NeutralToneMapping; // keeps pinks and creams true instead of pushing them orange
 renderer.toneMappingExposure = 1.1;
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x07060c);
+const nightColor = new THREE.Color(0x07060c);
+scene.background = nightColor;
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.05, 80);
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 // soft contact shadows in corners and under furniture; desktop only (too heavy for phones)
+let gtao: GTAOPass | null = null;
 if (!lowGfx()) {
-  const gtao = new GTAOPass(scene, camera, innerWidth, innerHeight);
+  gtao = new GTAOPass(scene, camera, innerWidth, innerHeight);
   gtao.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1.4, thickness: 1.2, scale: 1.1 });
   gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
   composer.addPass(gtao);
@@ -100,6 +103,7 @@ const hallway = buildHallway(building.root, col);
 const keep = buildKeepsakes(building.root, assets, furniture);
 const board = buildBoard(building.root, new Set([...store.seen]));
 const atmo = buildAtmosphere(scene, furniture.lampWorld, lowGfx());
+const { stage: lobbyStage, sky: lobbySky } = buildLobbyStage(scene);
 const items: Interactable[] = [
   ...keep.items,
   ...board.items,
@@ -222,6 +226,11 @@ flow.on((p, prev) => {
   $('pause').hidden = p !== 'paused';
   if (p === 'paused') requestAnimationFrame(() => $('resumeBtn').focus());
   building.ceiling.visible = building.hallCeiling.visible = furniture.fan.visible = p !== 'lobby';
+  building.skyPlane.visible = atmo.rain.visible = p !== 'lobby';
+  // ambient occlusion adds nothing from the lobby's distance and smears a dark sliver over the open sky
+  if (gtao) gtao.enabled = p !== 'lobby';
+  lobbyStage.visible = p === 'lobby';
+  scene.background = p === 'lobby' ? lobbySky : nightColor;
   player.enabled = p === 'doorstep' || p === 'explore';
   if (!player.enabled) player.releaseKeys();
   if (p === 'doorstep' && prev === 'lobby') {

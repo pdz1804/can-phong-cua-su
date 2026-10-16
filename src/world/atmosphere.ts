@@ -20,6 +20,8 @@ export interface Atmosphere {
   flash(): void;
   wet: () => number;
   moon: THREE.DirectionalLight;
+  /** Rain streaks outside the window: hidden in the lobby, where they would cross the whole sky. */
+  rain: THREE.Object3D;
 }
 
 export function buildAtmosphere(scene: THREE.Scene, lampWorld: THREE.Vector3, mobile: boolean): Atmosphere {
@@ -137,7 +139,8 @@ export function buildAtmosphere(scene: THREE.Scene, lampWorld: THREE.Vector3, mo
   }
   rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
   const rainMat = new THREE.LineBasicMaterial({ color: 0x9fb7ee, transparent: true, opacity: 0.5 });
-  scene.add(new THREE.LineSegments(rainGeo, rainMat));
+  const rain = new THREE.LineSegments(rainGeo, rainMat);
+  scene.add(rain);
 
   // stars + big glowing lily outside (finale, and the clear-night preset shows stars)
   const starGeo = new THREE.BufferGeometry(),
@@ -238,6 +241,7 @@ export function buildAtmosphere(scene: THREE.Scene, lampWorld: THREE.Vector3, mo
   const tmp = new THREE.Vector3();
   return {
     moon,
+    rain,
     wet: () => wet,
     applyPreset(p) {
       rainOn = p.rain;

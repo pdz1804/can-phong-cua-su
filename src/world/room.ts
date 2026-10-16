@@ -31,6 +31,8 @@ export interface Building {
   };
   winGroup: THREE.Group;
   skyMat: THREE.MeshBasicMaterial;
+  /** The city backdrop behind the window: only meaningful through the glass, hidden in the lobby. */
+  skyPlane: THREE.Mesh;
   /** Walls, ceilings, trim, window and door: what dissolves in the finale. */
   shell: THREE.Mesh[];
 }
@@ -468,7 +470,20 @@ export function buildRoom(scene: THREE.Scene, a: Assets, col: Colliders, skyTex:
 
   // ---- outside: a big backdrop the glass shader also samples
   const skyMat = new THREE.MeshBasicMaterial({ map: skyTex });
-  add(new THREE.PlaneGeometry(26, 19), skyMat, [WIN.x, 1.5, -15], null, root, false, false);
+  const skyPlane = add(new THREE.PlaneGeometry(26, 19), skyMat, [WIN.x, 1.5, -15], null, root, false, false);
+
+  // cream caps on the wall tops: from the lobby's dollhouse view the cut walls show their edges
+  const cap = M(0xfaf4ec, { roughness: 0.6 });
+  for (const [x, z, w, d, y] of [
+    [0, -RD / 2 - 0.1, RW + 0.42, 0.26, RH],
+    [0, RD / 2 + 0.1, RW + 0.42, 0.26, RH],
+    [-RW / 2 - 0.1, 0, 0.26, RD + 0.42, RH],
+    [RW / 2 + 0.1, 0, 0.26, RD + 0.42, RH],
+    [hx, HALL.z1 + 0.1, hw + 0.42, 0.26, HALL.h],
+    [HALL.x0 - 0.1, (HALL.z1 + RD / 2 + 0.2) / 2, 0.26, HALL.z1 - RD / 2 + 0.02, HALL.h],
+    [HALL.x1 + 0.1, (HALL.z1 + RD / 2 + 0.2) / 2, 0.26, HALL.z1 - RD / 2 + 0.02, HALL.h],
+  ] as const)
+    add(RB(w, 0.05, d, 0.015), cap, [x, y + 0.025, z], null, root, false, false);
 
   // everything built so far except the sky backdrop is the building shell
   const shell: THREE.Mesh[] = [];
@@ -488,6 +503,7 @@ export function buildRoom(scene: THREE.Scene, a: Assets, col: Colliders, skyTex:
     glassUniforms,
     winGroup,
     skyMat,
+    skyPlane,
     shell,
   };
 }
