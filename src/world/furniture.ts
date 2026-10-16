@@ -46,12 +46,13 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
   P('cabinet_medium', { pos: [RW / 2 - 0.3, 0, 3.5], width: 1.2, rotY: -Math.PI / 2 });
   col.box(RW / 2 - 0.3, 3.5, 0.6, 1.25);
 
-  // ---- front wall: dresser + round mirror
-  anchors.dresser = P('cabinet_medium_decorated', { pos: [1.6, 0, RD / 2 - 0.3], width: 1.3, rotY: Math.PI });
+  // ---- front wall: dresser + round mirror (the plain cabinet: its keepsakes are the decoration,
+  // and the decorated variant's ornaments put its measured top 0.5 m above the real surface)
+  anchors.dresser = P('cabinet_medium', { pos: [1.6, 0, RD / 2 - 0.3], width: 1.3, rotY: Math.PI });
   col.box(1.6, RD / 2 - 0.3, 1.35, 0.6);
   {
     const mg = new THREE.Group();
-    mg.position.set(1.6, 1.62, RD / 2 - 0.03);
+    mg.position.set(1.6, 1.25, RD / 2 - 0.03);
     mg.rotation.y = Math.PI;
     root.add(mg);
     const rim = add(
