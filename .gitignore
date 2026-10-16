@@ -6,3 +6,4 @@ test-results
 *.log
 .firebase
 /raw-assets
+.audit/

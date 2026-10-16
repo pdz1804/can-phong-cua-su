@@ -17,7 +17,6 @@ export const KAYKIT_NAMES = [
   'cabinet_medium_decorated',
   'cabinet_medium',
   'cabinet_small',
-  'shelf_B_large_decorated',
   'shelf_A_big',
   'armchair',
   'armchair_pillows',

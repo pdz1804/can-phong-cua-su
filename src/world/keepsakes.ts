@@ -1063,8 +1063,8 @@ export function buildKeepsakes(root: THREE.Group, a: Assets, f: Furniture): Keep
   at('gongcha', night.c.x - 0.05, night.y, night.c.z + 0.14, 0.75);
   at('radio', night.c.x - 0.1, 0, night.c.z - 0.65, 1, -Math.PI / 2);
   // bed
-  at('stitch', bed.c.x + 0.65, bed.y - 0.12, bed.c.z - 0.35, 1.35, -Math.PI / 2 - 0.3);
-  at('pajamaBear', bed.c.x + 0.55, bed.y - 0.14, bed.c.z + 0.3, 1, -Math.PI / 2 + 0.3);
+  at('stitch', bed.c.x + 0.65, bed.y - 0.02, bed.c.z - 0.35, 1.35, -Math.PI / 2 - 0.3);
+  at('pajamaBear', bed.c.x + 0.55, bed.y - 0.04, bed.c.z + 0.3, 1, -Math.PI / 2 + 0.3);
   at('chickenPlush', bed.c.x - 0.3, bed.y - 0.08, bed.c.z, 1.5, 0.6).rotation.z = Math.PI / 2.4;
   // dresser (front wall, facing -z)
   at('roses', dress.c.x, dress.y, dress.c.z, 1);

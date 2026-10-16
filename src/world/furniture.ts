@@ -4,7 +4,7 @@
  */
 import * as THREE from 'three';
 import { Assets, ModelName, place } from './assets';
-import { add, Colliders, M, RB, rnd } from './kit';
+import { add, canvasTex, Colliders, M, makeCanvas, RB, rnd } from './kit';
 import { HALL, RD, RH, RW, WIN } from './room';
 import { photoTexture, Scene } from './photos';
 
@@ -35,6 +35,7 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
   // ---- right wall: bed (headboard against the wall), nightstand, wardrobe
   anchors.bed = P('bed_double_A', { pos: [RW / 2 - 1.1, 0, 0.7], depth: 2.1, rotY: -Math.PI / 2 });
   col.box(RW / 2 - 1.1, 0.7, 2.1, 1.7);
+  bedding(root);
   P('rug_rectangle_stripes_A', { pos: [RW / 2 - 2.5, 0.004, 0.7], width: 1.6, rotY: Math.PI / 2 });
   anchors.nightstand = P('cabinet_small_decorated', {
     pos: [RW / 2 - 0.3, 0, -0.75],
@@ -78,12 +79,8 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
   }
 
   // ---- left wall: bookshelf, reading corner (armchair + floor lamp), coat pegs, wall shelf
-  anchors.bookcase = P('shelf_B_large_decorated', {
-    pos: [-RW / 2 + 0.25, 0, 3.4],
-    width: 1.1,
-    rotY: Math.PI / 2,
-  });
-  col.box(-RW / 2 + 0.25, 3.4, 0.5, 1.1);
+  anchors.bookcase = bookcase(root, -RW / 2 + 0.22, 3.4);
+  col.box(-RW / 2 + 0.22, 3.4, 0.45, 1.15);
   anchors.lounge = P('armchair', { pos: [-3.7, 0, -2.7], height: 0.9, rotY: Math.PI / 4 });
   P('armchair_pillows', { pos: [-3.7, 0, -2.7], height: 0.9, rotY: Math.PI / 4 });
   col.box(-3.7, -2.7, 0.95, 0.95, undefined, 2.4, Math.PI / 4);
@@ -650,4 +647,110 @@ function leafyPlant(root: THREE.Group, x: number, z: number, h: number) {
       0.05,
     );
   }
+}
+
+const WOOD = 0xe9d3b8;
+
+/**
+ * A tall painted bookcase against the left wall, front facing +x. Its boards sit where the
+ * keepsakes are placed (top surface at 0.14 + 0.62k), and the free half of each shelf holds books.
+ */
+function bookcase(root: THREE.Group, x: number, z: number) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  root.add(g);
+  const W = 1.1,
+    D = 0.4,
+    H = 1.95;
+  const body = M(0xfbf1e8, { roughness: 0.6 });
+  add(RB(D, H, 0.04, 0.008), body, [0, H / 2, -W / 2 + 0.02], null, g);
+  add(RB(D, H, 0.04, 0.008), body, [0, H / 2, W / 2 - 0.02], null, g);
+  add(RB(0.02, H, W, 0.004), M(0xf3dfe4, { roughness: 0.7 }), [-D / 2 + 0.01, H / 2, 0], null, g);
+  add(RB(D + 0.03, 0.05, W + 0.04, 0.01), body, [0, H + 0.02, 0], null, g);
+  add(RB(D, 0.14, W, 0.01), M(WOOD, { roughness: 0.6 }), [0, 0.07, 0], null, g);
+  // where the keepsakes already sit on each shelf (z from the centre); books fill the other half
+  // keep in sync with the controller / shellCar / maskToy placements in keepsakes.ts
+  const keep = [0.3, -0.3, 0.25, 99];
+  const spines = [0xe8a0b4, 0x9fc3d9, 0xf2d27a, 0xc7b3e0, 0xa8d5b5, 0xf4c3a0, 0xe6e0d4, 0xd98b8b];
+  for (let k = 0; k < 4; k++) {
+    const top = 0.14 + 0.62 * k;
+    if (k > 0) add(RB(D - 0.02, 0.03, W - 0.08, 0.006), body, [0, top - 0.015, 0], null, g);
+    if (k === 3) continue; // the top board is the cabinet lid
+    // a run of books leaning together, on whichever half is free
+    const side = keep[k] > 0 ? -1 : 1;
+    let zz = side * 0.48;
+    const end = side * 0.02;
+    while (side < 0 ? zz < end : zz > end) {
+      const t = rnd(0.03, 0.055),
+        h = rnd(0.2, 0.3);
+      const c = spines[Math.floor(Math.random() * spines.length)];
+      add(
+        RB(rnd(0.17, 0.22), h, t, 0.006),
+        M(c, { roughness: 0.8 }),
+        [0.04, top + h / 2, zz - (side * t) / 2],
+        null,
+        g,
+      );
+      zz -= side * (t + 0.004);
+    }
+  }
+  return g;
+}
+
+/** Linen-and-quilt bedding over the KayKit frame (mattress top at y≈0.52, headboard at +x). */
+function bedding(root: THREE.Group) {
+  const quilt = makeCanvas(512, 512, (c, w, h) => {
+    c.fillStyle = '#f7d9e0';
+    c.fillRect(0, 0, w, h);
+    c.strokeStyle = 'rgba(206,140,160,0.55)';
+    c.lineWidth = 3;
+    for (let i = -w; i < w * 2; i += 64) {
+      c.beginPath();
+      c.moveTo(i, 0);
+      c.lineTo(i + h, h);
+      c.moveTo(i, h);
+      c.lineTo(i + h, 0);
+      c.stroke();
+    }
+    c.fillStyle = 'rgba(255,255,255,0.55)';
+    for (let x = 0; x < w; x += 64) for (let y = 0; y < h; y += 64) c.fillRect(x + 30, y + 30, 4, 4);
+  });
+  const qTex = canvasTex(quilt);
+  qTex.wrapS = qTex.wrapT = THREE.RepeatWrapping;
+  qTex.repeat.set(2, 2);
+  const duvet = new THREE.MeshPhysicalMaterial({
+    map: qTex,
+    roughness: 0.9,
+    sheen: 0.6,
+    sheenColor: 0xffffff,
+  });
+  const bx = RW / 2 - 1.1;
+  const g = new THREE.Group();
+  root.add(g);
+  // the duvet hangs over both sides, folded back below the pillows
+  add(RB(1.55, 0.38, 2.1, 0.07, 4), duvet, [bx - 0.32, 0.4, 0.7], null, g);
+  add(new THREE.CapsuleGeometry(0.07, 1.9, 6, 16), duvet, [bx + 0.45, 0.6, 0.7], [Math.PI / 2, 0, 0], g);
+  // two linen pillows against the headboard
+  const linen = new THREE.MeshPhysicalMaterial({
+    color: 0xfffaf3,
+    roughness: 0.95,
+    sheen: 0.4,
+    sheenColor: 0xffffff,
+  });
+  for (const z of [0.22, 1.18]) {
+    add(RB(0.42, 0.14, 0.78, 0.065, 4), linen, [bx + 0.72, 0.62, z], [0, 0, 0.35], g);
+  }
+  // a cream knit throw folded across the foot
+  const knit = makeCanvas(128, 128, (c, w, h) => {
+    c.fillStyle = '#f3e7d3';
+    c.fillRect(0, 0, w, h);
+    c.fillStyle = 'rgba(190,160,120,0.35)';
+    for (let x = 0; x < w; x += 16) c.fillRect(x, 0, 6, h);
+    c.fillStyle = '#e8a0b4';
+    c.fillRect(0, 54, w, 10);
+  });
+  const kTex = canvasTex(knit);
+  kTex.wrapS = kTex.wrapT = THREE.RepeatWrapping;
+  kTex.repeat.set(6, 1);
+  add(RB(0.5, 0.06, 2.12, 0.025), M(0xffffff, { map: kTex, roughness: 1 }), [bx - 0.62, 0.61, 0.7], null, g);
 }
