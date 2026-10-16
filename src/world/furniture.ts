@@ -80,6 +80,7 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
 
   // ---- left wall: bookshelf, reading corner (armchair + floor lamp), coat pegs, wall shelf
   anchors.bookcase = bookcase(root, -RW / 2 + 0.22, 3.4);
+  trailingPlant(root, -RW / 2 + 0.32, 2.0, 3.0);
   col.box(-RW / 2 + 0.22, 3.4, 0.45, 1.15);
   anchors.lounge = P('armchair', { pos: [-3.7, 0, -2.7], height: 0.9, rotY: Math.PI / 4 });
   P('armchair_pillows', { pos: [-3.7, 0, -2.7], height: 0.9, rotY: Math.PI / 4 });
@@ -753,4 +754,64 @@ function bedding(root: THREE.Group) {
   kTex.wrapS = kTex.wrapT = THREE.RepeatWrapping;
   kTex.repeat.set(6, 1);
   add(RB(0.5, 0.06, 2.12, 0.025), M(0xffffff, { map: kTex, roughness: 1 }), [bx - 0.62, 0.61, 0.7], null, g);
+}
+
+/** A pothos in a little pot on top of the bookcase, its vines trailing down the side toward the pegs. */
+function trailingPlant(root: THREE.Group, x: number, y: number, z: number) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  root.add(g);
+  const pot = M(0xf2c3cc, { roughness: 0.5 });
+  add(new THREE.CylinderGeometry(0.11, 0.085, 0.16, 24), pot, [0, 0.08, 0], null, g);
+  add(new THREE.CylinderGeometry(0.1, 0.1, 0.015, 20), M(0x5a4030, { roughness: 1 }), [0, 0.155, 0], null, g);
+  const leaf = [
+    M(0x6fa863, { roughness: 0.55, side: THREE.DoubleSide }),
+    M(0x9cc47a, { roughness: 0.55, side: THREE.DoubleSide }),
+  ];
+  const leafGeo = new THREE.SphereGeometry(0.045, 10, 8);
+  const vineMat = M(0x5e8a52);
+  // a few vines: up and over the pot rim, then falling with a gentle sway
+  const vines: [number, number, number][] = [
+    // every vine leaves past the front edge of the lid before it drops, so none cuts through the shelves
+    [0.16, 0.65, -0.2],
+    [0.18, 0.9, -0.5],
+    [0.15, 0.5, 0.15],
+    [0.17, 0.75, -0.75],
+  ];
+  vines.forEach(([out, drop, along], vi) => {
+    const pts = [
+      new THREE.Vector3(0, 0.16, 0),
+      new THREE.Vector3(out, 0.2, along * 0.3),
+      new THREE.Vector3(out + 0.03, -drop * 0.4, along * 0.7),
+      new THREE.Vector3(out + 0.02, -drop, along),
+    ];
+    const curve = new THREE.CatmullRomCurve3(pts);
+    add(new THREE.TubeGeometry(curve, 24, 0.004, 5), vineMat, [0, 0, 0], null, g, false);
+    const n = Math.round(8 + drop * 10);
+    for (let i = 1; i <= n; i++) {
+      const t = i / (n + 1);
+      const q = curve.getPoint(t);
+      const l = add(
+        leafGeo,
+        leaf[(i + vi) % 2],
+        [q.x + 0.02, q.y, q.z],
+        [rnd(-0.6, 0.6), rnd(0, Math.PI * 2), rnd(-0.4, 0.4)],
+        g,
+        false,
+      );
+      l.scale.set(1, 1.3, 0.12).multiplyScalar(1 - t * 0.35);
+    }
+  });
+  // a crown of leaves over the pot
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    add(
+      leafGeo,
+      leaf[i % 2],
+      [Math.cos(a) * 0.07, 0.2 + rnd(0, 0.05), Math.sin(a) * 0.07],
+      [rnd(-0.8, 0.8), a, 0.6],
+      g,
+      false,
+    ).scale.set(1.1, 1.4, 0.12);
+  }
 }

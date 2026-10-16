@@ -586,45 +586,71 @@ const BUILD: Record<string, Builder> = {
     add(new THREE.CylinderGeometry(0.006, 0.006, 0.22, 10), M(0xe2405c), [0.015, 0.24, 0], [0, 0, 0.15], g);
   },
   raincoats(g) {
+    // two glossy hooded raincoats hanging from the pegs (local +z faces out of the wall)
     (
       [
         [-0.22, 0xe24a4a],
         [0.22, 0x4a7fd6],
       ] as const
     ).forEach(([x, c]) => {
-      const pts: THREE.Vector2[] = [];
-      for (let i = 0; i <= 14; i++) {
-        const t = i / 14;
-        pts.push(new THREE.Vector2(0.05 + Math.pow(t, 0.7) * 0.2 + Math.sin(t * 9) * 0.006, -t * 1.0));
-      }
+      const coat = new THREE.Group();
+      coat.position.set(x, 0, 0.07);
+      g.add(coat);
       const mat = new THREE.MeshPhysicalMaterial({
         color: c,
-        roughness: 0.25,
-        clearcoat: 0.8,
-        side: THREE.DoubleSide,
+        roughness: 0.22,
+        clearcoat: 0.9,
+        clearcoatRoughness: 0.15,
       });
+      // A-line body: narrow shoulders flaring to the hem, flattened front to back
+      const pts: THREE.Vector2[] = [];
+      for (let i = 0; i <= 18; i++) {
+        const t = i / 18;
+        const r = 0.04 + 0.13 * Math.min(1, t / 0.06) + 0.04 * t + Math.sin(t * 7) * 0.004;
+        pts.push(new THREE.Vector2(r, -0.06 - t * 0.8));
+      }
+      pts.push(new THREE.Vector2(0.001, -0.93));
+      pts.reverse(); // lathe profiles run bottom to top, or the faces point inward
+      add(new THREE.LatheGeometry(pts, 40), mat, [0, 0, 0], null, coat).scale.z = 0.42;
+      // hood hangs folded behind the collar
       add(
-        new THREE.LatheGeometry(pts, 40, 0, Math.PI),
+        new THREE.SphereGeometry(0.11, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.6),
         mat,
-        [x, 0.02, 0.03],
-        [0, -Math.PI / 2, 0],
-        g,
-      ).scale.z = 0.45;
-      add(
-        new THREE.SphereGeometry(0.075, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2),
-        mat,
-        [x, 0.03, 0.05],
-        [Math.PI, 0, 0],
-        g,
-      ).scale.set(1, 1.2, 0.7);
-      for (const s of [-1, 1])
+        [0, -0.14, -0.075],
+        [0.2, 0, 0],
+        coat,
+      ).scale.set(1.05, 1.2, 0.3);
+      // hanging loop over the peg
+      add(new THREE.TorusGeometry(0.025, 0.006, 8, 20), mat, [0, -0.01, -0.02], [0, 0, 0], coat);
+      // sleeves hang a little in front of the body, slightly apart
+      for (const sx of [-1, 1])
         add(
-          new THREE.CapsuleGeometry(0.035, 0.5, 6, 12),
+          new THREE.CapsuleGeometry(0.04, 0.48, 6, 14),
           mat,
-          [x + s * 0.17, -0.3, 0.03],
-          [0, 0, s * 0.12],
-          g,
-        ).scale.z = 0.6;
+          [sx * 0.185, -0.36, 0.045],
+          [0.06, 0, sx * 0.1],
+          coat,
+        ).scale.z = 0.8;
+      // placket with snap buttons down the front
+      const front = 0.42;
+      add(
+        RB(0.03, 0.66, 0.01, 0.004),
+        M(new THREE.Color(c).multiplyScalar(0.8), { roughness: 0.3 }),
+        [0, -0.47, 0.086],
+        null,
+        coat,
+      );
+      for (let i = 0; i < 4; i++) {
+        const t = 0.15 + i * 0.2;
+        const r = 0.04 + 0.13 * Math.min(1, t / 0.06) + 0.04 * t;
+        add(
+          new THREE.CylinderGeometry(0.011, 0.011, 0.008, 16),
+          M(0xf7f2ea, { roughness: 0.3 }),
+          [0, -0.06 - t * 0.8, r * front + 0.016],
+          [Math.PI / 2, 0, 0],
+          coat,
+        );
+      }
     });
   },
   bubbles(g) {
