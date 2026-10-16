@@ -243,37 +243,7 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
     root.add(pic);
   }
 
-  // ---- hallway: doormat, wall sconce, plant
-  add(
-    RB(1.0, 0.012, 0.6, 0.006),
-    M(0xd9b28a, { roughness: 1, normalMap: a.furNormal }),
-    [-2.6, 0.006, RD / 2 + 0.6],
-    null,
-    root,
-    false,
-    true,
-  );
-  {
-    const sc = new THREE.Group();
-    sc.position.set(HALL.x0 + 0.02, 1.95, RD / 2 + 1.4);
-    sc.rotation.y = Math.PI / 2;
-    root.add(sc);
-    add(new THREE.CylinderGeometry(0.06, 0.06, 0.02, 24), M(0xe6c9a3), [0, 0, 0.01], [Math.PI / 2, 0, 0], sc);
-    add(
-      new THREE.SphereGeometry(0.11, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.6),
-      new THREE.MeshStandardMaterial({
-        color: 0xfffaf2,
-        emissive: 0xffe2b8,
-        emissiveIntensity: 1.1,
-        side: THREE.DoubleSide,
-      }),
-      [0, 0, 0.12],
-      [Math.PI, 0, 0],
-      sc,
-      false,
-      false,
-    );
-  }
+  // ---- hallway: a plant at the far corner (walls, door dressing and rugs live in hallway.ts)
   leafyPlant(root, HALL.x1 - 0.4, HALL.z1 - 0.45, 1.0);
   col.box(HALL.x1 - 0.4, HALL.z1 - 0.45, 0.5, 0.5);
 
@@ -313,17 +283,33 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
       st.rotation.set(rnd(-0.35, 0.35), k * 2.1, rnd(-0.35, 0.35));
       vase.add(st);
       add(new THREE.CylinderGeometry(0.004, 0.004, 0.24, 6), M(0x5e8a52), [0, 0.12, 0], null, st);
+      // a trumpet lily: six long petals opening outward from the stem tip, with stamens
+      const head = new THREE.Group();
+      head.position.set(0, 0.25, 0);
+      st.add(head);
+      for (let p = 0; p < 6; p++) {
+        const pg = new THREE.Group();
+        pg.rotation.set(0, (p / 6) * Math.PI * 2, 0);
+        head.add(pg);
+        const pt = add(
+          new THREE.SphereGeometry(0.03, 12, 8),
+          M(0xfffcf6, { roughness: 0.45 }),
+          [0.022, 0.035, 0],
+          [0, 0, -0.75],
+          pg,
+        );
+        pt.scale.set(0.35, 1.5, 0.12);
+      }
       for (let p = 0; p < 6; p++) {
         const a2 = (p / 6) * Math.PI * 2;
-        const pt = add(
-          new THREE.SphereGeometry(0.035, 12, 8),
-          M(0xfffcf6, { roughness: 0.45 }),
-          [Math.cos(a2) * 0.025, 0.25, Math.sin(a2) * 0.025],
+        add(
+          new THREE.SphereGeometry(0.004, 6, 4),
+          M(0xd9893a),
+          [Math.cos(a2) * 0.012, 0.055, Math.sin(a2) * 0.012],
           null,
-          st,
+          head,
+          false,
         );
-        pt.scale.set(0.35, 1, 0.12);
-        pt.rotation.set(Math.sin(a2) * 0.9, 0, -Math.cos(a2) * 0.9);
       }
     }
     // umbrella stand: a red and a blue umbrella, like the raincoats on 13.09
@@ -332,7 +318,7 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
     root.add(us);
     add(
       new THREE.CylinderGeometry(0.13, 0.11, 0.45, 28, 1, true),
-      M(0xe6c9a3, { roughness: 0.6, side: THREE.DoubleSide }),
+      M(0xf4ece4, { roughness: 0.25, side: THREE.DoubleSide }),
       [0, 0.225, 0],
       null,
       us,
@@ -348,7 +334,15 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
       u.rotation.z = tilt;
       us.add(u);
       add(new THREE.CylinderGeometry(0.006, 0.006, 0.8, 8), M(0x5a4030), [0, 0.4, 0], null, u);
-      add(new THREE.ConeGeometry(0.07, 0.5, 8), M(c, { roughness: 0.5 }), [0, 0.45, 0], null, u);
+      add(foldedCanopy(), M(c, { roughness: 0.45 }), [0, 0.42, 0], [Math.PI, 0, 0], u);
+      add(
+        new THREE.TorusGeometry(0.052, 0.008, 6, 24),
+        M(c, { roughness: 0.45 }),
+        [0, 0.5, 0],
+        [Math.PI / 2, 0, 0],
+        u,
+      );
+      add(new THREE.SphereGeometry(0.008, 8, 6), M(0xf7f2ea), [0.052, 0.5, 0], null, u);
       add(new THREE.TorusGeometry(0.03, 0.008, 8, 16, Math.PI), M(0x5a4030), [0.03, 0.82, 0], null, u);
     }
     // a pair of little shoes waiting on the doormat
@@ -814,4 +808,18 @@ function trailingPlant(root: THREE.Group, x: number, y: number, z: number) {
       false,
     ).scale.set(1.1, 1.4, 0.12);
   }
+}
+
+/** A closed umbrella canopy: a cone whose surface folds in and out between eight ribs. */
+function foldedCanopy() {
+  const g = new THREE.ConeGeometry(0.07, 0.5, 48, 6);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const a = Math.atan2(p.getZ(i), p.getX(i));
+    const k = 1 + Math.cos(a * 8) * 0.22;
+    p.setX(i, p.getX(i) * k);
+    p.setZ(i, p.getZ(i) * k);
+  }
+  g.computeVertexNormals();
+  return g;
 }

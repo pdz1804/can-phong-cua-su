@@ -8,7 +8,12 @@ import { Preset } from './weather';
 import { RD, RH, RW, WIN } from './room';
 
 export interface Atmosphere {
-  update(dt: number, t: number, ctx: { jarWorld: THREE.Vector3; glow: number; finaleT: number }): void;
+  /** inHall: 0 in the room, 1 in the hallway (moonlight from the window must not reach it). */
+  update(
+    dt: number,
+    t: number,
+    ctx: { jarWorld: THREE.Vector3; glow: number; finaleT: number; inHall: number },
+  ): void;
   applyPreset(p: Preset): void;
   releaseFireflies(): void;
   releaseBubbles(from: THREE.Vector3): void;
@@ -36,7 +41,9 @@ export function buildAtmosphere(scene: THREE.Scene, lampWorld: THREE.Vector3, mo
   moon.target.position.set(WIN.x - 0.6, 0, -0.6);
   moon.castShadow = !mobile;
   moon.shadow.mapSize.set(2048, 2048);
-  Object.assign(moon.shadow.camera, { left: -6.5, right: 6.5, top: 6.5, bottom: -6.5, near: 1, far: 24 });
+  // wide enough to cover the hallway too, so the front wall shadows it
+  Object.assign(moon.shadow.camera, { left: -9.5, right: 9.5, top: 9.5, bottom: -9.5, near: 1, far: 28 });
+  moon.shadow.camera.updateProjectionMatrix();
   moon.shadow.bias = -0.0005;
   moon.shadow.normalBias = 0.03;
   scene.add(moon, moon.target);
@@ -45,13 +52,13 @@ export function buildAtmosphere(scene: THREE.Scene, lampWorld: THREE.Vector3, mo
     new THREE.PointLight(0xffa58a, 0.6, 10, 1.6), // room
     new THREE.PointLight(0xffc48a, 0.9, 6, 1.8), // front wall / polaroids
     new THREE.PointLight(0xff6f98, 1.4, 4, 1.8), // neon heart
-    new THREE.PointLight(0xffd9a8, 0.9, 5, 1.8), // hallway wall lamp
+    new THREE.PointLight(0xffd9a8, 1.0, 5, 1.8), // hallway, in front of the door
   ];
   fills[0].position.set(-1.2, RH - 0.4, -RD / 2 + 0.6);
   fills[1].position.set(1.5, 2.4, 1.5);
   fills[2].position.set(0, 2.1, RD / 2 - 0.7);
   fills[3].position.set(RW / 2 - 0.4, 2.1, 0.7);
-  fills[4].position.set(-4.1, 2.2, RD / 2 + 1.4);
+  fills[4].position.set(-2.6, 2.35, RD / 2 + 1.0); // centred on Su's door, between the two sconces
   fills.forEach((l) => scene.add(l));
 
   // soft additive beams (lamp cone, moonlight shaft)
@@ -286,7 +293,8 @@ export function buildAtmosphere(scene: THREE.Scene, lampWorld: THREE.Vector3, mo
       rainMat.opacity = 0.5 * wet;
       flash = Math.max(0, flash - dt * (flash > 0.6 ? 2.5 : 1.2));
       const fl = flash > 0 ? flash * (0.6 + 0.4 * Math.sin(T * 50)) : 0;
-      moon.intensity = baseMoon + fl * 9;
+      // the hallway has no window: without shadows (phones) the moon would light it through the walls
+      moon.intensity = (baseMoon + fl * 9) * (1 - ctx.inHall);
       const fin = ctx.finaleT;
       starMat.opacity += ((starsOn || fin >= 0 ? 1 : 0) - starMat.opacity) * Math.min(1, dt * 0.6);
       if (fin >= 0) {

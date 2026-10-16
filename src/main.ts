@@ -15,6 +15,7 @@ import { loadAssets } from './world/assets';
 import { Colliders, Interactable } from './world/kit';
 import { buildRoom, DOOR, RD, WIN } from './world/room';
 import { buildFurniture } from './world/furniture';
+import { buildHallway } from './world/hallway';
 import { buildKeepsakes } from './world/keepsakes';
 import { buildBoard, curl } from './world/board';
 import { buildAtmosphere } from './world/atmosphere';
@@ -95,6 +96,7 @@ const building = buildRoom(scene, assets, col, presets[store.settings.weather].s
 // the room and hallway wall blockers (registered before any furniture); the door blocker is excluded
 const walls = col.group.children.filter((c) => !c.userData.isDoor);
 const furniture = buildFurniture(building.root, assets, col);
+const hallway = buildHallway(building.root, col);
 const keep = buildKeepsakes(building.root, assets, furniture);
 const board = buildBoard(building.root, new Set([...store.seen]));
 const atmo = buildAtmosphere(scene, furniture.lampWorld, lowGfx());
@@ -111,7 +113,7 @@ for (const it of items)
 const pickables = [...meshToItem.keys()];
 const inspector = new Inspector(scene, camera);
 const guide = new Guide(scene);
-const finale = buildFinale(scene, [...building.shell, ...furniture.curtains]);
+const finale = buildFinale(scene, [...building.shell, ...furniture.curtains, ...hallway]);
 const wide = () => innerWidth > 760;
 
 /** Where the firefly path leads: the door, then unread memories in date order, then the jar. */
@@ -542,7 +544,8 @@ renderer.setAnimationLoop(() => {
   if (finaleT >= 0) finaleT += dt;
   keep.jar.getWorldPosition(jarWorld);
   keep.jarGlow.intensity = finaleT >= 0 || store.finaleDone ? 0 : store.glow * 1.4;
-  atmo.update(dt, T, { jarWorld, glow: store.finaleDone ? 1 : store.glow, finaleT });
+  const inHall = THREE.MathUtils.smoothstep(camera.position.z, RD / 2 - 0.1, RD / 2 + 0.5);
+  atmo.update(dt, T, { jarWorld, glow: store.finaleDone ? 1 : store.glow, finaleT, inHall });
   // living details
   furniture.fan.rotation.z = Math.sin(T * 0.6) * 0.025; // the paper lantern sways a little
   furniture.bulbs.forEach(

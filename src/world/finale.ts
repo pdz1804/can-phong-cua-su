@@ -213,6 +213,7 @@ export function buildFinale(scene: THREE.Scene, shell: THREE.Mesh[]): Finale {
         const c = mt.clone();
         c.transparent = true;
         c.depthWrite = false; // a fading wall must not hide the sky behind it
+        c.userData.base = mt.opacity;
         return c;
       });
       fadeMats.set(m, mats);
@@ -232,7 +233,7 @@ export function buildFinale(scene: THREE.Scene, shell: THREE.Mesh[]): Finale {
       const fade = ease(THREE.MathUtils.clamp(t / 3.5, 0, 1));
       for (const m of hidden) m.visible = fade < 0.35;
       for (const [m, mats] of fadeMats) {
-        for (const mt of mats) mt.opacity = 1 - fade;
+        for (const mt of mats) mt.opacity = (mt.userData.base as number) * (1 - fade);
         m.visible = fade < 0.999;
       }
       (dome.material as THREE.MeshBasicMaterial).opacity = fade;

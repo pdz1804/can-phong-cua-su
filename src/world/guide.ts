@@ -6,6 +6,10 @@ import * as THREE from 'three';
 import { canvasTex, makeCanvas } from './kit';
 
 const N = 44;
+const _ahead = new THREE.Vector3(),
+  _start = new THREE.Vector3(),
+  _mid = new THREE.Vector3(),
+  _p = new THREE.Vector3();
 
 export class Guide {
   private geo = new THREE.BufferGeometry();
@@ -47,15 +51,20 @@ export class Guide {
     this.alpha += ((target ? 0.85 : 0) - this.alpha) * Math.min(1, dt * 2);
     this.mat.opacity = this.alpha;
     if (!target || this.alpha < 0.01) return;
-    const start = from.clone().add(new THREE.Vector3(0, -0.55, 0));
-    const mid = start.clone().lerp(target, 0.5);
+    // start a little ahead and below the eye: fireflies right at the camera bloom into big blobs
+    const ahead = _ahead.copy(target).sub(from).setY(0);
+    const start = _start.copy(from);
+    start.y -= 0.5;
+    if (ahead.lengthSq() > 1e-4)
+      start.addScaledVector(ahead.normalize(), Math.min(0.9, from.distanceTo(target) * 0.4));
+    const mid = _mid.copy(start).lerp(target, 0.5);
     mid.y = Math.max(start.y, target.y) + 0.35;
     this.curve.v0.copy(start);
     this.curve.v1.copy(mid);
     this.curve.v2.copy(target);
     const len = start.distanceTo(target);
     this.phase = (this.phase + (dt * 0.35) / Math.max(len, 0.5)) % 1;
-    const p = new THREE.Vector3();
+    const p = _p;
     for (let i = 0; i < N; i++) {
       const u = (i / N + this.phase) % 1;
       this.curve.getPoint(u, p);
@@ -63,6 +72,6 @@ export class Guide {
       this.pos.set([p.x + wob, p.y + Math.cos(u * 15 + i) * 0.015, p.z - wob], i * 3);
     }
     this.geo.attributes.position.needsUpdate = true;
-    this.mat.size = 0.085 + Math.sin(performance.now() / 300) * 0.012;
+    this.mat.size = 0.06 + Math.sin(performance.now() / 300) * 0.008;
   }
 }
