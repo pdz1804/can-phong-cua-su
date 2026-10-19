@@ -638,3 +638,9 @@ button {
   align-items: center;
   gap: 8px;
 }
+
+/* finale subtitles: smaller and tighter so the Sala flower and the couple stay in view */
+.fin p {
+  font-size: clamp(14px, 3.6vw, 18px);
+  line-height: 1.18;
+}
