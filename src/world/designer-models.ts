@@ -57,7 +57,8 @@ let listed: Promise<Set<string>> | null = null;
 
 /** The designer files that have been accepted into the app (an empty set when there is no manifest). */
 function manifest(): Promise<Set<string>> {
-  listed ??= fetch(`${base}models/designer/manifest.json`)
+  // revalidate every visit: a phone that cached an older (shorter) list would miss new models
+  listed ??= fetch(`${base}models/designer/manifest.json`, { cache: 'no-cache' })
     .then((r) => (r.ok ? (r.json() as Promise<unknown>) : []))
     .then((v) => new Set(Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []))
     .catch(() => new Set<string>());
