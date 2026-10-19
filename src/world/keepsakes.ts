@@ -739,7 +739,7 @@ const BUILD: Record<string, Builder> = {
     add(
       new THREE.SphereGeometry(0.16, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2),
       M(0xf6efe6, { roughness: 0.3, side: THREE.DoubleSide }),
-      [0, 0.16, 0],
+      [0, 0.08, 0], // bowl rests on the table (half-height bowl: its rim at 0.08)
       null,
       g,
     ).scale.y = 0.5;
@@ -749,8 +749,8 @@ const BUILD: Record<string, Builder> = {
       [-0.06, 0.05],
       [0.02, -0.07],
     ] as const) {
-      add(new THREE.SphereGeometry(0.05, 20, 16), M(0x9cc56a, { roughness: 0.55 }), [x, 0.11, z], null, g);
-      add(new THREE.CylinderGeometry(0.003, 0.003, 0.04, 6), M(0x5a4030), [x, 0.17, z], [0.3, 0, 0.2], g);
+      add(new THREE.SphereGeometry(0.05, 20, 16), M(0x9cc56a, { roughness: 0.55 }), [x, 0.06, z], null, g);
+      add(new THREE.CylinderGeometry(0.003, 0.003, 0.04, 6), M(0x5a4030), [x, 0.12, z], [0.3, 0, 0.2], g);
     }
   },
   banhTrang(g) {
@@ -1093,7 +1093,7 @@ export function buildKeepsakes(root: THREE.Group, a: Assets, f: Furniture): Keep
   // bed
   at('stitch', bed.c.x + 0.65, bed.y - 0.02, bed.c.z - 0.35, 1.35, -Math.PI / 2 - 0.3);
   at('pajamaBear', bed.c.x + 0.55, bed.y - 0.04, bed.c.z + 0.3, 1, -Math.PI / 2 + 0.3);
-  at('chickenPlush', bed.c.x - 0.3, bed.y - 0.08, bed.c.z, 1.5, 0.6).rotation.z = Math.PI / 2.4;
+  at('chickenPlush', bed.c.x - 0.3, bed.y - 0.17, bed.c.z, 1.5, 0.6).rotation.z = Math.PI / 2.4;
   // dresser (front wall, facing -z)
   at('roses', dress.c.x, dress.y, dress.c.z, 1);
   at('camera', dress.c.x + 0.42, dress.y, dress.c.z, 1, Math.PI + 0.4);

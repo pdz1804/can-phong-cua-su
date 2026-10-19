@@ -645,5 +645,41 @@ if (location.hash === '#qa')
         const it = items.find((i) => i.id === id);
         if (it) use(it);
       },
+      /** Keepsakes whose base sits more than 4 cm above whatever is under them (wall-hung ones excepted). */
+      floating: () => {
+        const hung = new Set(['raincoats', 'certificate', 'jacket']); // hung on pegs, a wall or a chair back
+        const ray = new THREE.Raycaster();
+        const down = new THREE.Vector3(0, -1, 0);
+        const solid: THREE.Object3D[] = [];
+        building.root.traverse((o) => {
+          if ((o as THREE.Mesh).isMesh && o.visible) solid.push(o);
+        });
+        // probe the centre and four inset points of the footprint: resting on any of them counts
+        const gap = (it: Interactable) => {
+          const box = new THREE.Box3().setFromObject(it.object);
+          const own = new Set<THREE.Object3D>();
+          it.object.traverse((o) => own.add(o));
+          let best = Infinity;
+          for (const [u, v] of [
+            [0.5, 0.5],
+            [0.25, 0.25],
+            [0.75, 0.25],
+            [0.25, 0.75],
+            [0.75, 0.75],
+          ]) {
+            const x = THREE.MathUtils.lerp(box.min.x, box.max.x, u),
+              z = THREE.MathUtils.lerp(box.min.z, box.max.z, v);
+            ray.set(new THREE.Vector3(x, box.min.y + 0.05, z), down);
+            const hit = ray.intersectObjects(solid, false).find((h) => !own.has(h.object));
+            if (hit) best = Math.min(best, hit.distance - 0.05);
+          }
+          return best;
+        };
+        return items
+          .filter((it) => (it.kind === 'keepsake' || it.kind === 'notebook') && !hung.has(it.id))
+          .map((it) => ({ id: it.id, gap: gap(it) }))
+          .filter((r) => r.gap > 0.04)
+          .map((r) => `${r.id} ${Number.isFinite(r.gap) ? r.gap.toFixed(2) + ' m' : 'over nothing'}`);
+      },
     },
   });

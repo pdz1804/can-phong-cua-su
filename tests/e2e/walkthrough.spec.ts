@@ -20,6 +20,11 @@ test('lobby → door → walk into the room → read a memory, with no page erro
   });
   await page.goto('/#qa');
   await expect(page.locator('#lobby')).toBeVisible({ timeout: 60_000 });
+  // every keepsake rests on something: a mis-measured shelf or dresser once left several floating
+  const floating = await page.evaluate(() =>
+    (window as unknown as { __qa: { floating: () => string[] } }).__qa.floating(),
+  );
+  expect(floating).toEqual([]);
   await page.locator('#weather label', { hasText: 'Hoàng hôn' }).click();
   await expect(page.locator('input[value=sunset]')).toBeChecked();
   // the start button must be reachable on short screens (phone held sideways)

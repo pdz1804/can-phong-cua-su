@@ -37,7 +37,8 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
   col.box(RW / 2 - 1.1, 0.7, 2.1, 1.7);
   bedding(root);
   P('rug_rectangle_stripes_A', { pos: [RW / 2 - 2.5, 0.004, 0.7], width: 1.6, rotY: Math.PI / 2 });
-  anchors.nightstand = P('cabinet_small_decorated', {
+  // plain cabinet: the decorated one's ornaments put its measured top 0.2 m above the real surface
+  anchors.nightstand = P('cabinet_small', {
     pos: [RW / 2 - 0.3, 0, -0.75],
     height: 0.58,
     rotY: -Math.PI / 2,
