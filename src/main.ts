@@ -669,9 +669,10 @@ if (location.hash === '#qa')
           ]) {
             const x = THREE.MathUtils.lerp(box.min.x, box.max.x, u),
               z = THREE.MathUtils.lerp(box.min.z, box.max.z, v);
-            ray.set(new THREE.Vector3(x, box.min.y + 0.05, z), down);
+            // from above the item, so one sunk into a soft duvet still finds the surface it rests in
+            ray.set(new THREE.Vector3(x, box.max.y + 0.05, z), down);
             const hit = ray.intersectObjects(solid, false).find((h) => !own.has(h.object));
-            if (hit) best = Math.min(best, hit.distance - 0.05);
+            if (hit) best = Math.min(best, box.min.y - hit.point.y);
           }
           return best;
         };

@@ -79,6 +79,9 @@ export async function swapInDesignerModel(id: string, group: THREE.Group): Promi
     // the group is scaled for the code-built version's proportions; the model is already true size
     const s = group.scale.x || 1;
     model.scale.setScalar(1 / s);
+    // designer models already rest in their natural pose: keep the group's turn, drop any tilt
+    // the code-built version needed (the fried-chicken plush was laid on its side)
+    group.rotation.x = group.rotation.z = 0;
     group.clear();
     group.add(model);
     return true;
