@@ -7,6 +7,7 @@ import { Assets, ModelName, place } from './assets';
 import { add, canvasTex, Colliders, M, makeCanvas, RB, rnd } from './kit';
 import { HALL, RD, RH, RW, WIN } from './room';
 import { photoTexture, Scene } from './photos';
+import { swapInDesignerPiece } from './designer-models';
 
 const POLAROID_SCENES: Scene[] = ['photobooth', 'umbrella', 'bouquet', 'sala', 'cafe', 'lily', 'lanterns'];
 
@@ -82,6 +83,8 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
 
   // ---- left wall: bookshelf, reading corner (armchair + floor lamp), coat pegs, wall shelf
   anchors.bookcase = bookcase(root, -RW / 2 + 0.22, 3.4);
+  // the designer's bookcase faces +Z: turn it to face the room (+x)
+  void swapInDesignerPiece('scene-bookcase', anchors.bookcase as THREE.Group, 'floor', { rotY: Math.PI / 2 });
   trailingPlant(root, -RW / 2 + 0.32, 2.0, 3.0);
   col.box(-RW / 2 + 0.22, 3.4, 0.45, 1.15);
   anchors.lounge = P('armchair', { pos: [-3.7, 0, -2.7], height: 0.9, rotY: Math.PI / 4 });
@@ -212,6 +215,8 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
     const pl = new THREE.PointLight(0xffe2b8, 1.4, 6, 1.7);
     pl.position.copy(shade.position);
     fan.add(pl);
+    // the designer's lantern hangs shorter: move its light into the new globe
+    void swapInDesignerPiece('scene-paper-lantern', fan, 'hang').then((ok) => ok && pl.position.setY(-0.55));
   }
 
   // ---- plants: a big leafy pot + a KayKit cactus, books on the bookshelf
@@ -347,6 +352,7 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
       add(new THREE.SphereGeometry(0.008, 8, 6), M(0xf7f2ea), [0.052, 0.5, 0], null, u);
       add(new THREE.TorusGeometry(0.03, 0.008, 8, 16, Math.PI), M(0x5a4030), [0.03, 0.82, 0], null, u);
     }
+    void swapInDesignerPiece('scene-umbrella-stand', us, 'floor');
     // a pair of little shoes waiting on the doormat
     const shoes: [number, number][] = [
       [-2.75, 0.15],

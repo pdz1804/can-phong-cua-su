@@ -66,6 +66,54 @@ function manifest(): Promise<Set<string>> {
 
 const loader = new GLTFLoader();
 
+/**
+ * How a room piece is lined up with the code-built one it replaces (in the group's own space):
+ * floor = same bottom and centre; wall = same back face and centre; hang = same top and centre.
+ */
+export type Fit = 'floor' | 'wall' | 'hang';
+
+/**
+ * Replace the code-built meshes of a room piece with the designer's model, if it is listed.
+ * Lights and anything marked `userData.keep` (glow decals) stay. The model is sized by the brief
+ * and lined up with the old piece's bounding box, so a pivot that is slightly off cannot float it.
+ */
+export async function swapInDesignerPiece(
+  file: string,
+  group: THREE.Group,
+  fit: Fit,
+  opts: { rotY?: number; scale?: number } = {},
+): Promise<boolean> {
+  if (!(await manifest()).has(file)) return false;
+  try {
+    const model = (await loader.loadAsync(`${base}models/designer/${file}.glb`)).scene;
+    model.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) o.castShadow = o.receiveShadow = true;
+    });
+    const old = group.children.filter((c) => !(c as THREE.Light).isLight && !c.userData.keep);
+    const was = new THREE.Box3();
+    for (const c of old) was.union(new THREE.Box3().setFromObject(c, true));
+    // both boxes in the group's own space
+    group.updateWorldMatrix(true, false);
+    const inv = group.matrixWorld.clone().invert();
+    was.applyMatrix4(inv);
+    model.rotation.y = opts.rotY ?? 0;
+    model.scale.setScalar(opts.scale ?? 1);
+    model.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(model, true);
+    const c = was.getCenter(new THREE.Vector3()),
+      m = box.getCenter(new THREE.Vector3());
+    model.position.set(c.x - m.x, c.y - m.y, c.z - m.z);
+    if (fit === 'floor') model.position.y = was.min.y - box.min.y;
+    if (fit === 'hang') model.position.y = was.max.y - box.max.y;
+    if (fit === 'wall') model.position.z = was.min.z - box.min.z;
+    for (const o of old) group.remove(o);
+    group.add(model);
+    return true;
+  } catch {
+    return false; // keep the code-built piece
+  }
+}
+
 /** Replace the code-built keepsake in `group` with the designer's model, if one is listed. */
 export async function swapInDesignerModel(id: string, group: THREE.Group): Promise<boolean> {
   const file = DESIGNER_FILES[id];

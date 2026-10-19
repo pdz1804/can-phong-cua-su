@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { add, canvasTex, M, makeCanvas, rnd } from './kit';
 import { WIN } from './room';
+import { swapInDesignerPiece } from './designer-models';
 
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -178,6 +179,9 @@ export function buildFinale(scene: THREE.Scene, shell: THREE.Mesh[]): Finale {
   figure(-0.17, 1.05, 0xf4ead8, 0x2b1d18, false); // Phú
   figure(0.17, 0.95, 0x7fb09b, 0x3a2620, true); // Su, green dress
   add(new THREE.SphereGeometry(0.035, 12, 8), M(0xf3d2bd), [0, 0.55, 0.04], null, couple); // their hands
+
+  void swapInDesignerPiece('scene-sala-flower', flower, 'floor');
+  void swapInDesignerPiece('scene-couple', couple, 'floor');
 
   // petals drifting down
   const PET = 220;

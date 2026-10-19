@@ -15,8 +15,13 @@ describe('designer models', () => {
   it('every file the manifest lists is shipped (a listed but missing model never loads)', () => {
     const listed = JSON.parse(readFileSync('public/models/designer/manifest.json', 'utf8')) as string[];
     expect(Array.isArray(listed)).toBe(true);
+    // room pieces are swapped in by name where they are built (swapInDesignerPiece('scene-…', …))
+    const pieces = ['hallway', 'room', 'furniture', 'finale']
+      .map((m) => readFileSync(`src/world/${m}.ts`, 'utf8'))
+      .join('\n');
     for (const f of listed) {
-      expect(Object.values(DESIGNER_FILES), f).toContain(f);
+      if (f.startsWith('scene-')) expect(pieces, f).toContain(`swapInDesignerPiece('${f}'`);
+      else expect(Object.values(DESIGNER_FILES), f).toContain(f);
       expect(existsSync(`public/models/designer/${f}.glb`), f).toBe(true);
     }
   });

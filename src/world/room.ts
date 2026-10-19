@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { Assets } from './assets';
 import { photoTexture } from './photos';
 import { add, canvasTex, Colliders, M, makeCanvas, RB, rnd } from './kit';
+import { swapInDesignerPiece } from './designer-models';
 
 export const RW = 10,
   RD = 10,
@@ -368,6 +369,7 @@ export function buildRoom(scene: THREE.Scene, a: Assets, col: Colliders, skyTex:
       1,
       0.6,
     );
+    void swapInDesignerPiece('scene-wreath', wreath, 'wall');
     // the ribbon it hangs from, over the top of the door, behind the nameplate
     add(
       RB(0.028, DOOR.h - 1.62, 0.003, 0.001),

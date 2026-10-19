@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { add, canvasTex, Colliders, M, makeCanvas, RB, rnd } from './kit';
 import { photoTexture, Scene } from './photos';
+import { swapInDesignerPiece } from './designer-models';
 import { DOOR, HALL, RD } from './room';
 
 /** The hall face of the front wall (the wall is 0.2 m thick, room side at z = RD / 2). */
@@ -150,7 +151,9 @@ function sconces(parent: THREE.Group) {
     add(new THREE.TorusGeometry(0.12, 0.005, 6, 48), brass, [0, 0.062, 0.13], [Math.PI / 2, 0, 0], s, false);
     const glow = glowDecal(0.9, 1.1, 'rgba(255,214,160,1)', 0.38);
     glow.position.set(0, 0.12, 0.004);
+    glow.userData.keep = true;
     s.add(glow);
+    void swapInDesignerPiece('scene-wall-sconce', s, 'wall');
   }
 }
 
@@ -330,6 +333,7 @@ function bench(parent: THREE.Group, col: Colliders) {
   add(RB(0.32, 0.05, 0.24, 0.02), M(0xb9d3ee, { roughness: 0.95 }), [0.3, 0.565, 0.01], [0, 0.2, 0], b);
   add(RB(0.36, 0.11, 0.3, 0.02), M(0xf6ece2, { roughness: 0.8 }), [-0.25, 0.185, 0], [0, -0.1, 0], b); // a basket below
   col.box(x, z, 1.15, 0.42);
+  void swapInDesignerPiece('scene-hall-bench', b, 'floor');
 }
 
 /** An oval mirror in a scalloped blush frame above the console on the right wall. */
