@@ -334,19 +334,14 @@ function use(it: Interactable) {
   if (it.kind === 'door') return openDoor();
   if (flow.phase !== 'explore') return;
   if (it.kind === 'jar') {
-    if (store.unlocked && !store.finaleDone) return startFinale();
+    // once lit, the jar can be opened again any time to replay the finale
+    if (store.unlocked || store.finaleDone) return startFinale();
     return showLetter(
-      store.finaleDone
-        ? {
-            date: 'Hũ đom đóm',
-            title: 'Đom đóm đã bay ra rồi',
-            body: 'Giờ tụi nó ở khắp phòng với em. Mỗi lần em nhớ anh, cứ nhìn quanh là thấy.',
-          }
-        : {
-            date: 'Hũ đom đóm',
-            title: 'Hũ chưa đủ sáng',
-            body: 'Mỗi kỷ niệm em mở sẽ thắp thêm đom đóm trong hũ. Khi hũ sáng lên, em mở nắp ra nhé. Còn nhiều điều anh cất quanh phòng lắm đó.',
-          },
+      {
+        date: 'Hũ đom đóm',
+        title: 'Hũ chưa đủ sáng',
+        body: 'Mỗi kỷ niệm em mở sẽ thắp thêm đom đóm trong hũ. Khi hũ sáng lên, em mở nắp ra nhé. Còn nhiều điều anh cất quanh phòng lắm đó.',
+      },
       null,
     );
   }
@@ -511,7 +506,7 @@ $('finBack').onclick = () => {
   sound.apply();
   player.teleport(WIN.x - 0.15, -RD / 2 + 1.6, 0, 0.1);
   flow.go('explore');
-  setHint('Đom đóm sẽ ở lại trong phòng với em');
+  setHint('Đom đóm sẽ ở lại trong phòng với em. Muốn xem lại, em cứ mở hũ nhé');
   lockPointer();
 };
 if (store.finaleDone) atmo.releaseFireflies();
