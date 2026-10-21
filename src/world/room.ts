@@ -230,7 +230,11 @@ export function buildRoom(scene: THREE.Scene, a: Assets, col: Colliders, skyTex:
   const insetMat = M(0xe9c5c5, { roughness: 0.5 });
   const mouldMat = M(0xfaf1ea, { roughness: 0.45 });
   const brass = M(0xd4b06a, { metalness: 0.85, roughness: 0.3, envMapIntensity: 1.2 });
-  add(RB(DOOR.w - 0.04, DOOR.h - 0.03, 0.05, 0.01), doorMat, [DOOR.w / 2, DOOR.h / 2, 0], null, door);
+  // the slab, panels and hardware live in their own group so the designer's door can replace just them;
+  // the hinge pivot (door), the nameplate, the wreath and the ribbon stay
+  const slab = new THREE.Group();
+  door.add(slab);
+  add(RB(DOOR.w - 0.04, DOOR.h - 0.03, 0.05, 0.01), doorMat, [DOOR.w / 2, DOOR.h / 2, 0], null, slab);
   // two recessed panels per face, each ringed by a bevelled moulding
   for (const s of [1, -1])
     for (const [cy, ph] of [
@@ -238,44 +242,46 @@ export function buildRoom(scene: THREE.Scene, a: Assets, col: Colliders, skyTex:
       [0.52, 0.66],
     ] as const) {
       const pw = 0.66;
-      add(RB(pw - 0.05, ph - 0.05, 0.006, 0.003), insetMat, [DOOR.w / 2, cy, s * 0.026], null, door);
+      add(RB(pw - 0.05, ph - 0.05, 0.006, 0.003), insetMat, [DOOR.w / 2, cy, s * 0.026], null, slab);
       for (const [dx, dy, sw, sh] of [
         [0, ph / 2, pw, 0.032],
         [0, -ph / 2, pw, 0.032],
         [-pw / 2, 0, 0.032, ph],
         [pw / 2, 0, 0.032, ph],
       ] as const)
-        add(RB(sw, sh, 0.014, 0.006), mouldMat, [DOOR.w / 2 + dx, cy + dy, s * 0.031], null, door);
+        add(RB(sw, sh, 0.014, 0.006), mouldMat, [DOOR.w / 2 + dx, cy + dy, s * 0.031], null, slab);
       // brass lever on a backplate, with a keyhole below
-      add(RB(0.055, 0.21, 0.01, 0.006), brass, [DOOR.w - 0.11, 0.99, s * 0.03], null, door);
+      add(RB(0.055, 0.21, 0.01, 0.006), brass, [DOOR.w - 0.11, 0.99, s * 0.03], null, slab);
       add(
         new THREE.CylinderGeometry(0.012, 0.012, 0.04, 16),
         brass,
         [DOOR.w - 0.11, 1.04, s * 0.05],
         [Math.PI / 2, 0, 0],
-        door,
+        slab,
       );
       add(
         new THREE.CapsuleGeometry(0.011, 0.11, 6, 12),
         brass,
         [DOOR.w - 0.165, 1.04, s * 0.068],
         [0, 0, Math.PI / 2],
-        door,
+        slab,
       );
       add(
         new THREE.CylinderGeometry(0.008, 0.008, 0.004, 16),
         M(0x3a2a20),
         [DOOR.w - 0.11, 0.935, s * 0.036],
         [Math.PI / 2, 0, 0],
-        door,
+        slab,
         false,
       );
     }
   // three brass hinges on the hinge edge
   for (const y of [0.25, 1.07, 1.9]) {
-    add(new THREE.CylinderGeometry(0.011, 0.011, 0.1, 12), brass, [0.0, y, 0.03], null, door);
-    add(RB(0.04, 0.09, 0.004, 0.002), brass, [0.02, y, 0.027], null, door, false);
+    add(new THREE.CylinderGeometry(0.011, 0.011, 0.1, 12), brass, [0.0, y, 0.03], null, slab);
+    add(RB(0.04, 0.09, 0.004, 0.002), brass, [0.02, y, 0.027], null, slab, false);
   }
+  // centred fit: the slab straddles the hinge plane, so a back-face fit would push it out of the casing
+  void swapInDesignerPiece('held-door', slab, 'floor', { shell: true });
   const plate = canvasTex(
     makeCanvas(256, 128, (g, w, h) => {
       g.fillStyle = '#fbe3e8';
@@ -407,14 +413,19 @@ export function buildRoom(scene: THREE.Scene, a: Assets, col: Colliders, skyTex:
   const winGroup = new THREE.Group();
   winGroup.position.set(WIN.x, WIN.y, -RD / 2 - 0.1);
   root.add(winGroup);
+  // the fixed frame and sill sit in their own group: the designer's frame replaces only these, the
+  // hinged casements and the rainy glass below stay in code
+  const fixedFrame = new THREE.Group();
+  winGroup.add(fixedFrame);
   for (const [x, y, w, h] of [
     [0, WIN.h / 2 + 0.04, WIN.w + 0.16, 0.08],
     [0, -WIN.h / 2 - 0.04, WIN.w + 0.16, 0.08],
   ])
-    add(RB(w, h, 0.24, 0.015), trim, [x, y, 0], null, winGroup);
+    add(RB(w, h, 0.24, 0.015), trim, [x, y, 0], null, fixedFrame);
   for (const x of [-WIN.w / 2 - 0.04, WIN.w / 2 + 0.04])
-    add(RB(0.08, WIN.h + 0.16, 0.24, 0.015), trim, [x, 0, 0], null, winGroup);
-  add(RB(WIN.w + 0.5, 0.05, 0.32, 0.015), trim, [0, -WIN.h / 2 - 0.07, 0.2], null, winGroup);
+    add(RB(0.08, WIN.h + 0.16, 0.24, 0.015), trim, [x, 0, 0], null, fixedFrame);
+  add(RB(WIN.w + 0.5, 0.05, 0.32, 0.015), trim, [0, -WIN.h / 2 - 0.07, 0.2], null, fixedFrame);
+  void swapInDesignerPiece('room-window-frame', fixedFrame, 'wall', { shell: true });
   const glassUniforms = {
     uBg: { value: skyTex },
     uTime: { value: 0 },

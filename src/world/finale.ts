@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { add, canvasTex, M, makeCanvas, rnd } from './kit';
 import { WIN } from './room';
-import { swapInDesignerPiece } from './designer-models';
+import { shellModels, swapInDesignerPiece } from './designer-models';
 
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -207,7 +207,13 @@ export function buildFinale(scene: THREE.Scene, shell: THREE.Mesh[]): Finale {
   const fadeMats = new Map<THREE.Mesh, THREE.Material[]>();
   const hidden: THREE.Mesh[] = [];
   const begin = () => {
-    for (const m of shell) {
+    // designer models that replaced shell pieces after the room was built dissolve with the rest
+    const swapped: THREE.Mesh[] = [];
+    for (const r of shellModels)
+      r.traverse((o) => {
+        if ((o as THREE.Mesh).isMesh) swapped.push(o as THREE.Mesh);
+      });
+    for (const m of [...shell, ...swapped]) {
       originals.set(m, m.material);
       if ((m.material as THREE.Material).type === 'ShaderMaterial') {
         hidden.push(m); // rainy-glass shader writes opaque alpha: hide it instead of fading a broken clone

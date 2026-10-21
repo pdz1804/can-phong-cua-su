@@ -25,6 +25,7 @@ import { Player } from './player/player';
 import { Inspector } from './world/inspect';
 import { Guide } from './world/guide';
 import { buildFinale } from './world/finale';
+import { designerSwaps, swapLog } from './world/designer-models';
 import { bindTouch } from './player/touch';
 import { Sound } from './audio/audio';
 import { TIMELINE } from './content/timeline';
@@ -110,11 +111,20 @@ const items: Interactable[] = [
   { id: 'door', label: 'Mở cửa phòng', object: building.door, kind: 'door' },
 ];
 const meshToItem = new Map<THREE.Object3D, Interactable>();
-for (const it of items)
-  it.object.traverse((o) => {
-    if ((o as THREE.Mesh).isMesh) meshToItem.set(o, it);
-  });
-const pickables = [...meshToItem.keys()];
+let pickables: THREE.Object3D[] = [];
+let pickableSwaps = -1;
+/** Rebuilt whenever a designer model has replaced a code-built piece, so swapped items stay clickable. */
+function refreshPickables() {
+  if (pickableSwaps === designerSwaps()) return;
+  pickableSwaps = designerSwaps();
+  meshToItem.clear();
+  for (const it of items)
+    it.object.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) meshToItem.set(o, it);
+    });
+  pickables = [...meshToItem.keys()];
+}
+refreshPickables();
 const inspector = new Inspector(scene, camera);
 const guide = new Guide(scene);
 const finale = buildFinale(scene, [...building.shell, ...furniture.curtains, ...hallway]);
@@ -316,6 +326,7 @@ let aimed: Interactable | null = null;
 function pickAt(x: number, y: number, range: number): Interactable | null {
   ray.setFromCamera(new THREE.Vector2((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1), camera);
   ray.far = range;
+  refreshPickables();
   // walls are tested too, so nothing can be opened through a wall
   const hit = ray.intersectObjects([...pickables, ...walls], false)[0];
   return hit ? (meshToItem.get(hit.object) ?? null) : null;
@@ -636,6 +647,7 @@ if (location.hash === '#qa')
       player,
       flow,
       store,
+      swapLog,
       use: (id: string) => {
         const it = items.find((i) => i.id === id);
         if (it) use(it);

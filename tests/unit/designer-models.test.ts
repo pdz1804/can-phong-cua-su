@@ -1,6 +1,48 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { DESIGNER_FILES } from '../../src/world/designer-models';
+
+// room pieces are swapped in by name where they are built (swapInDesignerPiece('room-…', …))
+const pieces = readdirSync('src/world')
+  .filter((f) => f.endsWith('.ts'))
+  .map((f) => readFileSync(`src/world/${f}`, 'utf8'))
+  .join('\n');
+const PIECE_PREFIX = /^(scene|room|hall|decor|held|finale)-|^keepsake-(fish-tank|firefly-jar)$/;
+const SLOTS = [
+  'held-door',
+  'room-window-frame',
+  'held-bedding',
+  'room-bed-frame',
+  'held-coffee-table',
+  'room-writing-desk',
+  'room-dresser-cabinet',
+  'room-armchair',
+  'room-low-cabinet',
+  'room-curtain-panel',
+  'decor-cork-board',
+  'room-oval-rug',
+  'room-striped-rug',
+  'hall-runner-rug',
+  'room-leafy-plant',
+  'room-pothos-planter',
+  'room-floor-cactus',
+  'room-floor-cushion',
+  'room-beanbag',
+  'room-standing-lamp',
+  'room-desk-lamp',
+  'room-desk-chair',
+  'room-nightstand',
+  'room-wall-shelf',
+  'room-wall-frame-large',
+  'room-round-mirror',
+  'hall-scalloped-mirror',
+  'hall-fairy-garland',
+  'hall-little-shoes',
+  'decor-neon-heart',
+  'finale-glowing-lily',
+  'keepsake-fish-tank',
+  'keepsake-firefly-jar',
+];
 
 describe('designer models', () => {
   it('every keepsake maps to a distinct kebab-case file name from the brief', () => {
@@ -15,14 +57,13 @@ describe('designer models', () => {
   it('every file the manifest lists is shipped (a listed but missing model never loads)', () => {
     const listed = JSON.parse(readFileSync('public/models/designer/manifest.json', 'utf8')) as string[];
     expect(Array.isArray(listed)).toBe(true);
-    // room pieces are swapped in by name where they are built (swapInDesignerPiece('scene-…', …))
-    const pieces = ['hallway', 'room', 'furniture', 'finale']
-      .map((m) => readFileSync(`src/world/${m}.ts`, 'utf8'))
-      .join('\n');
     for (const f of listed) {
-      if (f.startsWith('scene-')) expect(pieces, f).toContain(`swapInDesignerPiece('${f}'`);
+      if (PIECE_PREFIX.test(f)) expect(pieces, f).toContain(`swapInDesignerPiece('${f}'`);
       else expect(Object.values(DESIGNER_FILES), f).toContain(f);
       expect(existsSync(`public/models/designer/${f}.glb`), f).toBe(true);
     }
+  });
+  it('every room piece slot is wired where the piece is built', () => {
+    for (const f of SLOTS) expect(pieces, f).toContain(`swapInDesignerPiece('${f}'`);
   });
 });

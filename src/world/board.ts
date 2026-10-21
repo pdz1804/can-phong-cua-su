@@ -9,6 +9,7 @@ import { TIMELINE } from '../content/timeline';
 import { add, canvasTex, Interactable, M, makeCanvas, RB, rnd } from './kit';
 import { RD } from './room';
 import { photoTexture, Scene } from './photos';
+import { swapInDesignerPiece } from './designer-models';
 
 type Kind = 'sticky' | 'polaroid' | 'ticket' | 'letter';
 
@@ -173,7 +174,11 @@ export function buildBoard(root: THREE.Group, seen: Set<string>): Board {
   root.add(group);
   const BW = 4.0,
     BH = 1.75;
-  add(RB(BW + 0.1, BH + 0.1, 0.045, 0.015), M(0xc79c74, { roughness: 0.5 }), [0, 0, 0], null, group);
+  // frame and cork surface sit in their own group so the designer's board can replace just them;
+  // the notes, pins, clips and string below are added to `group` and stay
+  const frame = new THREE.Group();
+  group.add(frame);
+  add(RB(BW + 0.1, BH + 0.1, 0.045, 0.015), M(0xc79c74, { roughness: 0.5 }), [0, 0, 0], null, frame);
   const cork = canvasTex(
     makeCanvas(768, 336, (g, w, h) => {
       g.fillStyle = '#cfa57a';
@@ -191,10 +196,11 @@ export function buildBoard(root: THREE.Group, seen: Set<string>): Board {
     M(0xffffff, { map: cork, roughness: 1 }),
     [0, 0, 0.024],
     null,
-    group,
+    frame,
     false,
     true,
   );
+  void swapInDesignerPiece('decor-cork-board', frame, 'wall');
 
   const notes: THREE.Mesh[] = [];
   const items: Interactable[] = [];

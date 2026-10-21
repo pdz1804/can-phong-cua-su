@@ -158,7 +158,11 @@ function sconces(parent: THREE.Group) {
 }
 
 /** A fairy-light garland of leaves and warm bulbs arching over the door casing. */
-function garland(parent: THREE.Group) {
+function garland(hall: THREE.Group) {
+  // vine, leaves, bulbs and hearts share one group so the designer's garland can replace them;
+  // the glow decal is added to the hall itself and stays
+  const parent = new THREE.Group();
+  hall.add(parent);
   const top = DOOR.h + 0.2;
   const half = DOOR.w / 2 + CASING + 0.06;
   const z = FRONT + 0.11; // in front of the casing head cap
@@ -211,7 +215,8 @@ function garland(parent: THREE.Group) {
   }
   const glow = glowDecal(2.2, 0.9, 'rgba(255,205,140,1)', 0.22);
   glow.position.set(DOOR.x, top - 0.02, FRONT + 0.004);
-  parent.add(glow);
+  hall.add(glow);
+  void swapInDesignerPiece('hall-fairy-garland', parent, 'wall', { shell: true });
 }
 
 /** A patterned runner down the hall and a coir doormat in front of the door. */
@@ -242,15 +247,18 @@ function floor(parent: THREE.Group) {
         }
     }),
   );
+  const runnerRug = new THREE.Group();
+  parent.add(runnerRug);
   add(
     RB(0.95, 0.01, runnerLen, 0.004),
     M(0xffffff, { map: runner, roughness: 1 }),
     [DOOR.x, 0.006, FRONT + 0.35 + runnerLen / 2],
     null,
-    parent,
+    runnerRug,
     false,
     true,
   );
+  void swapInDesignerPiece('hall-runner-rug', runnerRug, 'floor', { shell: true });
   const mat = canvasTex(
     makeCanvas(512, 320, (c, w, h) => {
       c.fillStyle = '#b58a5c';
@@ -365,4 +373,5 @@ function mirror(parent: THREE.Group) {
     false,
   );
   glass.scale.y = 4 / 3;
+  void swapInDesignerPiece('hall-scalloped-mirror', m, 'wall', { shell: true });
 }

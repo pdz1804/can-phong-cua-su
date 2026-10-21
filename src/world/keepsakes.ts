@@ -8,7 +8,7 @@ import { Assets } from './assets';
 import { add, canvasTex, Interactable, M, makeCanvas, RB, rnd } from './kit';
 import { Furniture } from './furniture';
 import { RD, RW, WIN } from './room';
-import { swapInDesignerModel } from './designer-models';
+import { swapInDesignerModel, swapInDesignerPiece } from './designer-models';
 
 type Builder = (g: THREE.Group, a: Assets) => void;
 
@@ -1092,7 +1092,7 @@ export function buildKeepsakes(root: THREE.Group, a: Assets, f: Furniture): Keep
   at('radio', night.c.x - 0.1, 0, night.c.z - 0.65, 1, -Math.PI / 2);
   // bed
   at('stitch', bed.c.x + 0.65, bed.y - 0.02, bed.c.z - 0.35, 1.35, -Math.PI / 2 - 0.3);
-  at('pajamaBear', bed.c.x + 0.55, bed.y - 0.04, bed.c.z + 0.3, 1, -Math.PI / 2 + 0.3);
+  at('pajamaBear', bed.c.x + 0.55, bed.y - 0.18, bed.c.z + 0.3, 1, -Math.PI / 2 + 0.3); // on the softer, lower duvet
   at('chickenPlush', bed.c.x - 0.3, bed.y - 0.17, bed.c.z, 1.5, 0.6).rotation.z = Math.PI / 2.4;
   // dresser (front wall, facing -z)
   at('roses', dress.c.x, dress.y, dress.c.z, 1);
@@ -1184,6 +1184,7 @@ export function buildKeepsakes(root: THREE.Group, a: Assets, f: Furniture): Keep
       false,
     );
     fish.userData = {
+      keep: true, // swimming fish stay when the designer's tank replaces the code-built glass
       r: rnd(0.08, 0.18),
       s: rnd(0.4, 0.9) * (k % 2 ? 1 : -1),
       ph: rnd(0, 6),
@@ -1193,6 +1194,9 @@ export function buildKeepsakes(root: THREE.Group, a: Assets, f: Furniture): Keep
     };
   }
   items.push({ id: 'tank', label: LABELS.tank, object: fishTank, kind: 'keepsake' });
+  // not via swapInDesignerModel (it clears the group): the fish and the tank light must stay.
+  // The group is scaled 0.75 for the code-built tank; the model is already true size. Long side along z.
+  void swapInDesignerPiece('keepsake-fish-tank', fishTank, 'floor', { rotY: Math.PI / 2 });
 
   // firefly jar on the sill
   const jar = new THREE.Group();
@@ -1229,6 +1233,8 @@ export function buildKeepsakes(root: THREE.Group, a: Assets, f: Furniture): Keep
   jarGlow.position.set(0, 0.2, 0);
   jar.add(jarGlow);
   items.push({ id: 'jar', label: 'Hũ đom đóm', object: jar, kind: 'jar' });
+  // only the glass and lid are replaced: the jar group and its glow light keep their identity
+  void swapInDesignerPiece('keepsake-firefly-jar', jar, 'floor');
 
   const bubbleSource = items.find((i) => i.id === 'bubbles')!.object;
   return { items, jar, jarGlow, bubbleSource, fishTank };

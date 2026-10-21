@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { add, canvasTex, makeCanvas, M, rnd } from './kit';
 import { Preset } from './weather';
 import { RD, RH, RW, WIN } from './room';
+import { swapInDesignerPiece } from './designer-models';
 
 export interface Atmosphere {
   /** inHall: 0 in the room, 1 in the hallway (moonlight from the window must not reach it). */
@@ -180,6 +181,7 @@ export function buildAtmosphere(scene: THREE.Scene, lampWorld: THREE.Vector3, mo
       false,
       false,
     );
+    void swapInDesignerPiece('finale-glowing-lily', bigLily, 'floor');
   }
 
   // fireflies

@@ -30,27 +30,39 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
   // ---- back wall: writing desk under the window, chair
   anchors.desk = P('table_medium_long', { pos: [WIN.x, 0, -RD / 2 + 0.42], width: 1.6 });
   col.box(WIN.x, -RD / 2 + 0.42, 1.65, 0.8);
+  void swapInDesignerPiece('room-writing-desk', anchors.desk as THREE.Group, 'floor');
   anchors.chair = P('chair_A', { pos: [WIN.x - 0.2, 0, -RD / 2 + 1.15], height: 0.92, rotY: Math.PI + 0.3 });
+  void swapInDesignerPiece('room-desk-chair', anchors.chair as THREE.Group, 'floor');
   col.box(WIN.x - 0.2, -RD / 2 + 1.15, 0.5, 0.5);
 
   // ---- right wall: bed (headboard against the wall), nightstand, wardrobe
   anchors.bed = P('bed_double_A', { pos: [RW / 2 - 1.1, 0, 0.7], depth: 2.1, rotY: -Math.PI / 2 });
+  void swapInDesignerPiece('room-bed-frame', anchors.bed as THREE.Group, 'floor');
   col.box(RW / 2 - 1.1, 0.7, 2.1, 1.7);
-  bedding(root);
-  P('rug_rectangle_stripes_A', { pos: [RW / 2 - 2.5, 0.004, 0.7], width: 1.6, rotY: Math.PI / 2 });
+  // the designer's bedding is authored like the bed: headboard at the back, so turn it to the +x wall
+  void swapInDesignerPiece('held-bedding', bedding(root), 'floor', { rotY: -Math.PI / 2 });
+  const stripedRug = P('rug_rectangle_stripes_A', {
+    pos: [RW / 2 - 2.5, 0.004, 0.7],
+    width: 1.6,
+    rotY: Math.PI / 2,
+  });
+  void swapInDesignerPiece('room-striped-rug', stripedRug, 'floor');
   // plain cabinet: the decorated one's ornaments put its measured top 0.2 m above the real surface
   anchors.nightstand = P('cabinet_small', {
     pos: [RW / 2 - 0.3, 0, -0.75],
     height: 0.58,
     rotY: -Math.PI / 2,
   });
+  void swapInDesignerPiece('room-nightstand', anchors.nightstand as THREE.Group, 'floor');
   col.box(RW / 2 - 0.3, -0.75, 0.5, 0.5);
-  P('cabinet_medium', { pos: [RW / 2 - 0.3, 0, 3.5], width: 1.2, rotY: -Math.PI / 2 });
+  const wardrobe = P('cabinet_medium', { pos: [RW / 2 - 0.3, 0, 3.5], width: 1.2, rotY: -Math.PI / 2 });
+  void swapInDesignerPiece('room-dresser-cabinet', wardrobe, 'floor');
   col.box(RW / 2 - 0.3, 3.5, 0.6, 1.25);
 
   // ---- front wall: dresser + round mirror (the plain cabinet: its keepsakes are the decoration,
   // and the decorated variant's ornaments put its measured top 0.5 m above the real surface)
   anchors.dresser = P('cabinet_medium', { pos: [1.6, 0, RD / 2 - 0.3], width: 1.3, rotY: Math.PI });
+  void swapInDesignerPiece('room-dresser-cabinet', anchors.dresser as THREE.Group, 'floor');
   col.box(1.6, RD / 2 - 0.3, 1.35, 0.6);
   {
     const mg = new THREE.Group();
@@ -79,6 +91,7 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
       false,
     );
     glass.scale.y = 1.25;
+    void swapInDesignerPiece('room-round-mirror', mg, 'wall');
   }
 
   // ---- left wall: bookshelf, reading corner (armchair + floor lamp), coat pegs, wall shelf
@@ -88,9 +101,14 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
   trailingPlant(root, -RW / 2 + 0.32, 2.0, 3.0);
   col.box(-RW / 2 + 0.22, 3.4, 0.45, 1.15);
   anchors.lounge = P('armchair', { pos: [-3.7, 0, -2.7], height: 0.9, rotY: Math.PI / 4 });
-  P('armchair_pillows', { pos: [-3.7, 0, -2.7], height: 0.9, rotY: Math.PI / 4 });
+  const pillows = P('armchair_pillows', { pos: [-3.7, 0, -2.7], height: 0.9, rotY: Math.PI / 4 });
+  // the designer's armchair comes with its own two pillows
+  void swapInDesignerPiece('room-armchair', anchors.lounge as THREE.Group, 'floor').then(
+    (ok) => ok && pillows.removeFromParent(),
+  );
   col.box(-3.7, -2.7, 0.95, 0.95, undefined, 2.4, Math.PI / 4);
-  P('lamp_standing', { pos: [-4.5, 0, -3.6], height: 1.65 });
+  const floorLamp = P('lamp_standing', { pos: [-4.5, 0, -3.6], height: 1.65 });
+  void swapInDesignerPiece('room-standing-lamp', floorLamp, 'floor');
   col.box(-4.5, -3.6, 0.35, 0.35);
   // wooden peg rail for the raincoats
   {
@@ -114,6 +132,8 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
   root.add(shelf);
   add(RB(0.28, 0.035, 1.6, 0.01), M(0xe6c9a3, { roughness: 0.6 }), [0, 0, 0], null, shelf);
   anchors.shelf = shelf;
+  // the designer's shelf faces +Z: turn it to face the room (+x), and keep its top where the keepsakes sit
+  void swapInDesignerPiece('room-wall-shelf', shelf, 'hang', { rotY: Math.PI / 2 });
   // low cabinet for the fish tank
   const cab = new THREE.Group();
   cab.position.set(-RW / 2 + 0.3, 0, 0.6);
@@ -131,9 +151,12 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
   }
   col.box(-RW / 2 + 0.3, 0.6, 0.55, 1.25);
   anchors.cabinet = cab;
+  // faces +x, into the room
+  void swapInDesignerPiece('room-low-cabinet', cab, 'floor', { rotY: Math.PI / 2 });
 
   // ---- centre: rug, low coffee table, floor cushions, beanbag, paper pendant lamp
-  P('rug_oval_A', { pos: [0.2, 0.004, 0.6], width: 3.0 });
+  const ovalRug = P('rug_oval_A', { pos: [0.2, 0.004, 0.6], width: 3.0 });
+  void swapInDesignerPiece('room-oval-rug', ovalRug, 'floor');
   // round wooden coffee table, soft-edged (KayKit's low table reads as a dome from standing height)
   {
     const t = new THREE.Group();
@@ -153,6 +176,7 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
       );
     }
     anchors.table = t;
+    void swapInDesignerPiece('held-coffee-table', t, 'floor');
   }
   col.box(0.2, 0.6, 0.9, 0.7);
   // two plump floor cushions, pink and baby blue
@@ -160,17 +184,22 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
     [-0.75, 0.75, 0xf2b8c4],
     [1.15, 0.9, 0xb9d3ee],
   ] as const) {
+    const cg = new THREE.Group();
+    root.add(cg);
     const cu = add(
       RB(0.6, 0.16, 0.6, 0.075, 5),
       M(c, { roughness: 0.95, normalMap: a.furNormal }),
       [x, 0.08, z],
       [0, 0.4, 0],
-      root,
+      cg,
     );
     cu.scale.y = 0.9;
-    add(new THREE.SphereGeometry(0.018, 10, 8), M(0xfffaf2), [x, 0.165, z], null, root, false);
+    add(new THREE.SphereGeometry(0.018, 10, 8), M(0xfffaf2), [x, 0.165, z], null, cg, false);
+    void swapInDesignerPiece('room-floor-cushion', cg, 'floor');
   }
   {
+    const bb = new THREE.Group();
+    root.add(bb);
     const g = new THREE.SphereGeometry(0.45, 40, 30);
     const p = g.attributes.position;
     for (let i = 0; i < p.count; i++) {
@@ -179,7 +208,9 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
       p.setY(i, y * 0.75 + Math.sin(p.getX(i) * 8) * 0.01);
     }
     g.computeVertexNormals();
-    add(g, M(0xf3b3c0, { roughness: 0.95, normalMap: a.furNormal }), [-1.9, 0.2, 2.0], null, root);
+    add(g, M(0xf3b3c0, { roughness: 0.95, normalMap: a.furNormal }), [-1.9, 0.2, 2.0], null, bb);
+    // the backrest leans toward the wall (-x): the designer's backrest is at its back (-Z)
+    void swapInDesignerPiece('room-beanbag', bb, 'floor', { rotY: Math.PI / 2 });
     col.box(-1.9, 2.0, 0.8, 0.8);
   }
   // paper lantern pendant: a soft glowing globe on a cord (sways gently, see main.ts)
@@ -222,7 +253,8 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
   // ---- plants: a big leafy pot + a KayKit cactus, books on the bookshelf
   leafyPlant(root, -RW / 2 + 0.5, -RD / 2 + 0.5, 1.25);
   col.box(-RW / 2 + 0.5, -RD / 2 + 0.5, 0.5, 0.5);
-  P('cactus_medium_A', { pos: [RW / 2 - 0.45, 0, -RD / 2 + 0.45], height: 0.9 });
+  const cactus = P('cactus_medium_A', { pos: [RW / 2 - 0.45, 0, -RD / 2 + 0.45], height: 0.9 });
+  void swapInDesignerPiece('room-floor-cactus', cactus, 'floor');
   col.box(RW / 2 - 0.45, -RD / 2 + 0.45, 0.45, 0.45);
 
   // ---- framed pictures (photo slots) on the right and front walls
@@ -232,6 +264,8 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
   ];
   for (const [name, x, y, z, ry, w, slot, scene] of frames) {
     const fr = P(name, { pos: [x, y, z], width: w, rotY: ry });
+    // the photo plane below is added to the root, so it stays when the frame is swapped
+    if (name === 'pictureframe_large_A') void swapInDesignerPiece('room-wall-frame-large', fr, 'wall');
     const fb = new THREE.Box3().setFromObject(fr);
     const size = fb.getSize(new THREE.Vector3());
     const pic = new THREE.Mesh(
@@ -358,16 +392,19 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
       [-2.75, 0.15],
       [-2.55, -0.1],
     ];
+    const shoePair = new THREE.Group();
+    root.add(shoePair);
     for (const [x, ry] of shoes) {
       const sh = add(
         RB(0.09, 0.06, 0.22, 0.03),
         M(0xf6ece2, { roughness: 0.6 }),
         [x, 0.04, RD / 2 + 0.75],
         [0, ry, 0],
-        root,
+        shoePair,
       );
       add(RB(0.07, 0.012, 0.05, 0.005), M(0xf2b8c4), [0, 0.03, 0.06], null, sh);
     }
+    void swapInDesignerPiece('hall-little-shoes', shoePair, 'floor');
     // flush ceiling light
     const cl = add(
       new THREE.SphereGeometry(0.2, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2),
@@ -401,7 +438,11 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
           Math.sin(p.getY(i) * 2 + p.getX(i) * 3) * 0.01,
       );
     g.computeVertexNormals();
-    curtains.push(add(g, curtainMat, [x, (RH - 0.25) / 2, -RD / 2 + 0.14], null, root));
+    const panel = new THREE.Group();
+    root.add(panel);
+    curtains.push(add(g, curtainMat, [x, (RH - 0.25) / 2, -RD / 2 + 0.14], null, panel));
+    // hangs from the rod; dissolves with the walls like the code-built panel
+    void swapInDesignerPiece('room-curtain-panel', panel, 'hang', { shell: true });
   }
   // desk lamp (the key light sits in its bulb)
   const lamp = new THREE.Group();
@@ -434,6 +475,8 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
     false,
     false,
   );
+  // the key light is lampWorld, not a child, so the swap only replaces the lamp's meshes
+  void swapInDesignerPiece('room-desk-lamp', lamp, 'floor');
   const lampWorld = new THREE.Vector3(WIN.x + 0.6, 0.78 + 0.43, -RD / 2 + 0.3);
 
   // string lights along the back wall + a polaroid string on the front wall
@@ -560,15 +603,21 @@ export function buildFurniture(root: THREE.Group, a: Assets, col: Colliders): Fu
         ),
       );
     }
+    const neon = new THREE.Group();
+    neon.position.set(RW / 2 - 0.04, 2.1, 0.7);
+    neon.rotation.y = -Math.PI / 2;
+    root.add(neon);
     add(
       new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 200, 0.014, 10, true),
       new THREE.MeshStandardMaterial({ color: 0xffc2d1, emissive: 0xff5c8a, emissiveIntensity: 3.2 }),
-      [RW / 2 - 0.04, 2.1, 0.7],
-      [0, -Math.PI / 2, 0],
-      root,
+      [0, 0, 0],
+      null,
+      neon,
       false,
       false,
     );
+    // its glow is the pink point light in atmosphere.ts, not a child, so only the tube is replaced
+    void swapInDesignerPiece('decor-neon-heart', neon, 'wall');
   }
   const stars: THREE.Object3D[] = [];
   {
@@ -629,6 +678,8 @@ function leafyPlant(root: THREE.Group, x: number, z: number, h: number) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
   root.add(g);
+  // the brief scales the designer's plant by h: 1.0 in the hall, 1.25 for the room's corner plant
+  void swapInDesignerPiece('room-leafy-plant', g, 'floor');
   const pot = M(0xf6ece2, { roughness: 0.45 });
   add(new THREE.CylinderGeometry(0.21, 0.16, 0.36, 32), pot, [0, 0.18, 0], null, g);
   add(new THREE.TorusGeometry(0.205, 0.018, 10, 40), pot, [0, 0.36, 0], [Math.PI / 2, 0, 0], g);
@@ -701,7 +752,7 @@ function bookcase(root: THREE.Group, x: number, z: number) {
 }
 
 /** Linen-and-quilt bedding over the KayKit frame (mattress top at y≈0.52, headboard at +x). */
-function bedding(root: THREE.Group) {
+function bedding(root: THREE.Group): THREE.Group {
   const quilt = makeCanvas(512, 512, (c, w, h) => {
     c.fillStyle = '#f7d9e0';
     c.fillRect(0, 0, w, h);
@@ -756,6 +807,7 @@ function bedding(root: THREE.Group) {
   kTex.wrapS = kTex.wrapT = THREE.RepeatWrapping;
   kTex.repeat.set(6, 1);
   add(RB(0.5, 0.06, 2.12, 0.025), M(0xffffff, { map: kTex, roughness: 1 }), [bx - 0.62, 0.61, 0.7], null, g);
+  return g;
 }
 
 /** A pothos in a little pot on top of the bookcase, its vines trailing down the side toward the pegs. */
@@ -763,6 +815,8 @@ function trailingPlant(root: THREE.Group, x: number, y: number, z: number) {
   const g = new THREE.Group();
   g.position.set(x, y, z);
   root.add(g);
+  // line up by the top: the vines hang below the pot, so a bottom fit would sink the pot into the bookcase
+  void swapInDesignerPiece('room-pothos-planter', g, 'hang');
   const pot = M(0xf2c3cc, { roughness: 0.5 });
   add(new THREE.CylinderGeometry(0.11, 0.085, 0.16, 24), pot, [0, 0.08, 0], null, g);
   add(new THREE.CylinderGeometry(0.1, 0.1, 0.015, 20), M(0x5a4030, { roughness: 1 }), [0, 0.155, 0], null, g);
