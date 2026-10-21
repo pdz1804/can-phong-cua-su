@@ -81,7 +81,7 @@ jobs:
           npx -y "$FIREBASE_TOOLS" hosting:channel:deploy "$channel" --only "$SITE" \
             --project "$PROJECT_ID" --expires 2d --non-interactive --json > channel.json
           url=$(jq -r --arg s "$SITE" '.result[$s].url' channel.json)
-          [ -n "$url" ] && [ "$url" != "null" ] || { cat channel.json; exit 1; }
+          if [ -z "$url" ] || [ "$url" = "null" ]; then cat channel.json; exit 1; fi
           echo "channel=$channel" >> "$GITHUB_OUTPUT"
           echo "url=$url" >> "$GITHUB_OUTPUT"
 

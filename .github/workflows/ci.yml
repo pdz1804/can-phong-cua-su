@@ -109,8 +109,12 @@ jobs:
         run: node .github/scripts/bundle-budget.mjs bundle-stats.json .github/bundle-baseline.json bundle-budget.json
       - name: No secrets or source maps in the bundle
         run: |
-          ! grep -rlE "AIza[0-9A-Za-z_-]{35}|sk-proj-|-----BEGIN [A-Z ]*PRIVATE KEY" dist
-          ! find dist -name '*.map' | grep -q .
+          if grep -rlE "AIza[0-9A-Za-z_-]{35}|sk-proj-|-----BEGIN [A-Z ]*PRIVATE KEY" dist; then
+            echo "::error::A key-like string is in the bundle (files above)"; exit 1
+          fi
+          if find dist -name '*.map' | grep .; then
+            echo "::error::Source maps would ship (files above)"; exit 1
+          fi
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() }}
         with:
