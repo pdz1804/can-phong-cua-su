@@ -68,7 +68,7 @@ function manifest(): Promise<Set<string>> {
 const loader = new GLTFLoader();
 
 /** What each room-piece swap measured and applied, for the QA hook. */
-export const swapLog: { file: string; was: number[]; scale: number[] }[] = [];
+export const swapLog: { file: string; was: number[]; scale: number[]; model?: THREE.Object3D }[] = [];
 
 /**
  * Free-standing pieces nothing rests on: they keep their own proportions inside the old box.
@@ -172,6 +172,7 @@ export async function swapInDesignerPiece(
       file,
       was: ws.toArray().map((v) => +v.toFixed(2)),
       scale: holder.scale.toArray().map((v) => +v.toFixed(2)),
+      model: holder,
     });
     for (const o of old) group.remove(o);
     group.add(holder);
