@@ -13,6 +13,7 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "check:private": "node scripts/check-private.mjs src",
     "prepare": "simple-git-hooks"
@@ -26,6 +27,7 @@
     "@eslint/js": "9.17.0",
     "@playwright/test": "1.49.1",
     "@types/three": "0.170.0",
+    "@vitest/coverage-v8": "2.1.8",
     "eslint": "9.17.0",
     "globals": "15.14.0",
     "lint-staged": "15.2.11",

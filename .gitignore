@@ -7,3 +7,5 @@ test-results
 .firebase
 /raw-assets
 .audit/
+coverage
+

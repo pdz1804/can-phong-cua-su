@@ -2,3 +2,4 @@
 *.glb binary
 *.hdr binary
 *.jpg binary
+*.sh text eol=lf
