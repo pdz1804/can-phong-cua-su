@@ -275,6 +275,25 @@ $('resumeBtn').onclick = () => {
   flow.go(doorOpen ? 'explore' : 'doorstep');
   lockPointer();
 };
+$('fillJarBtn').onclick = () => {
+  store.fillJar(items.filter((i) => i.kind !== 'door' && i.kind !== 'jar').map((i) => i.id));
+  updateJar();
+  guideKey = ''; // the firefly path now leads to the jar
+  flow.go(doorOpen ? 'explore' : 'doorstep');
+  setHint('Hũ đom đóm đã sáng đầy rồi. Em tới mở nắp nhé');
+  lockPointer();
+};
+$('emptyJarBtn').onclick = (e) => {
+  const b = e.currentTarget as HTMLButtonElement;
+  // a second tap confirms: this forgets every memory she has opened
+  if (b.dataset.armed !== '1') {
+    b.dataset.armed = '1';
+    b.textContent = 'Bấm lần nữa để làm trống hũ';
+    return;
+  }
+  store.emptyJar();
+  location.reload(); // fireflies, letters and the jar all start fresh
+};
 $('lobbyBtn').onclick = () => {
   flow.go('lobby');
   building.door.rotation.y = 0;

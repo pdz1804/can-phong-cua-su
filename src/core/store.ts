@@ -97,6 +97,20 @@ export class Store {
     return Math.min(1, this.seen.size / UNLOCK_COUNT);
   }
 
+  /** Light the jar fully: every given memory counts as seen. */
+  fillJar(ids: string[]): void {
+    for (const id of ids) this.seen.add(id);
+    write(this.kv, 'su-seen', [...this.seen]);
+  }
+
+  /** Start over: nothing seen, the fireflies back in the jar. */
+  emptyJar(): void {
+    this.seen.clear();
+    this.finaleDone = false;
+    write(this.kv, 'su-seen', []);
+    write(this.kv, 'su-finale', false);
+  }
+
   setFinaleDone(): void {
     this.finaleDone = true;
     write(this.kv, 'su-finale', true);

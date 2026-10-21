@@ -44,6 +44,19 @@ describe('store', () => {
     expect(new Store(kv).seen.size).toBe(UNLOCK_COUNT + 1);
   });
 
+  it('fills and empties the firefly jar', () => {
+    const kv = new MemKV();
+    const s = new Store(kv);
+    s.fillJar(Array.from({ length: UNLOCK_COUNT }, (_, i) => 'm' + i));
+    expect(s.unlocked).toBe(true);
+    s.setFinaleDone();
+    s.emptyJar();
+    const again = new Store(kv);
+    expect(again.seen.size).toBe(0);
+    expect(again.finaleDone).toBe(false);
+    expect(again.glow).toBe(0);
+  });
+
   it('works when storage is unavailable or corrupt', () => {
     expect(new Store(null).settings.weather).toBe('rain');
     const kv = new MemKV();
